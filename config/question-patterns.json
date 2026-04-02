@@ -1,0 +1,25 @@
+{
+  "knownQuestionStarts": [
+    "What is the most important information I should know about",
+    "What is",
+    "Do not use",
+    "Before using",
+    "Before taking",
+    "How should I use",
+    "How should I take",
+    "What are the possible side effects of",
+    "How should I store",
+    "General information about the safe and effective use of",
+    "What are the ingredients in"
+  ],
+  "questionRegexes": [
+    "^(What .+\\?)$",
+    "^(How .+\\?)$",
+    "^(Do not use .+)$",
+    "^(Before using .+)$",
+    "^(Before taking .+)$",
+    "^(Tell your healthcare provider .+)$",
+    "^(What are the possible side effects .+\\?)$",
+    "^(General information about the safe and effective use of .+\\.?$)"
+  ]
+}

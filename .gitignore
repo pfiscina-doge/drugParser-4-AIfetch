@@ -1,0 +1,4 @@
+output/
+config/perplexity-key-pf.txt
+.DS_Store
+node_modules/

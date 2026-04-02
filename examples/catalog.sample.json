@@ -1,0 +1,12 @@
+{
+  "zepbound": {
+    "url": "https://pi.lilly.com/us/zepbound-us-mg.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "striverdi-respimat": {
+    "url": "https://patient.boehringer-ingelheim.com/us/products/striverdi/bipdf/striverdi-respimat-us-pi",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  }
+}

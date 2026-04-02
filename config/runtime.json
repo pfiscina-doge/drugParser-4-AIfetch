@@ -1,0 +1,10 @@
+{
+  "trumpRxBaseUrl": "https://trumprx.gov/p",
+  "trumpRxParseMode": "agent-browser",
+  "llm": {
+    "baseUrl": "https://api.perplexity.ai",
+    "model": "sonar",
+    "apiKeyEnvVar": "PERPLEXITY_API_KEY",
+    "apiKeyFile": "./config/perplexity-key-pf.txt"
+  }
+}

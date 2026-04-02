@@ -1,0 +1,10 @@
+{
+  "name": "agentic-drug-label-load-diff",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/cli.mjs",
+    "run:sample": "node src/cli.mjs --catalog ./examples/catalog.sample.json --output ./output/sample-diff.json --save-intermediate"
+  }
+}

@@ -1,0 +1,139 @@
+# Agentic Drug Label Load Diff
+
+This project ingests a shared full drug catalog resource and can run either the whole catalog or a comma-separated subset of drug names.
+
+## Notes
+
+- The code is adapter-based because the requested browser workflow depends on an external browser agent runtime that is not present in this workspace.
+- A built-in `fetch` document parser is included for basic HTML/PDF download workflows.
+- A built-in `heuristic` diff engine is included so the pipeline runs end-to-end without an LLM.
+- A built-in `rule-based` document QA extractor is the default.
+- An `ai` document QA extractor can be enabled with Perplexity by default, while the endpoint and model remain configurable.
+- TrumpRX parsing can use either the linked PDF path or an `agent-browser` accordion-expansion path.
+- The default TrumpRX parse mode is `agent-browser`.
+- A `perplexity` engine stub is included as a configurable placeholder for future browser/LLM automation.
+
+## Run
+
+Run the whole shared catalog resource:
+
+```bash
+npm start -- --all-drugs --output ./output/results.json --save-intermediate
+```
+
+Run a comma-separated subset from the shared catalog resource:
+
+```bash
+npm start -- --drugs duavee,zepbound --output ./output/results.json --save-intermediate
+```
+
+Use a custom catalog file explicitly:
+
+```bash
+npm start -- --catalog ./examples/catalog.sample.json --output ./output/results.json --save-intermediate
+```
+
+Choose how new source documents are parsed with `--new-doc-parse-method`:
+
+- `fetch`: default, uses HTTP fetch/curl plus PDF text extraction
+- `agent-browser`: placeholder for a future interactive browser-backed document parser
+
+Choose how document text is turned into question/answer pairs with `--doc-qa-extractor`:
+
+- `rule-based`: default, uses the local parser heuristics
+- `ai`: uses the configured LLM endpoint to extract question/answer pairs
+
+How these two switches apply:
+
+- `--doc-qa-extractor` controls question/answer extraction for the source catalog document and for TrumpRX when `--trumprx-parse-mode pdf`
+- `--trumprx-parse-mode agent-browser` gathers the TrumpRX question/answer pairs directly from the page accordions instead of using the document QA extractor
+
+Use AI extraction with the default Perplexity config. If `llm.apiKeyFile` is set in runtime config, the CLI will preload that key automatically:
+
+```bash
+npm start --   --drugs duavee,zepbound   --output ./output/results.json   --doc-qa-extractor ai
+```
+
+Use the TrumpRX browser accordion parser:
+
+```bash
+npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trumprx-parse-mode agent-browser
+```
+
+Use the TrumpRX PDF parser explicitly:
+
+```bash
+npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trumprx-parse-mode pdf
+```
+
+## CLI options
+
+- `--catalog <path>`
+- `--drugs <comma,separated,names>`
+- `--all-drugs`
+- `--output <path>`
+- `--intermediate-dir <path>`
+- `--save-intermediate`
+- `--new-doc-parse-method <fetch|agent-browser>`
+- `--diff-engine <heuristic|perplexity>`
+- `--doc-qa-extractor <rule-based|ai>`
+- `--llm-base-url <url>`
+- `--llm-api-key <key>`
+- `--llm-model <model>`
+- `--source-html-dir <path>`
+- `--trumprx-base-url <url>`
+- `--trumprx-parse-mode <pdf|agent-browser>`
+- `--perplexity-base-url <url>`
+
+## Key files
+
+- `examples/catalog.full.json`: shared full catalog resource
+- `config/aliases.json`: name-to-alias mapping for TrumpRX lookup
+- `config/question-patterns.json`: known question prefixes and matching rules
+- `config/runtime.json`: runtime endpoints such as the TrumpRX base URL
+  - includes `trumpRxBaseUrl`, `trumpRxParseMode`, and `llm` settings
+- `src/cli.mjs`: command-line entrypoint
+- `src/pipeline.mjs`: main orchestration
+- `src/services/qa-extractors.mjs`: switchable rule-based and AI-backed document QA extraction
+- `src/services/trumprx-agent-browser.mjs`: TrumpRX accordion extraction using `agent-browser`
+
+## Output shape
+
+The main output file contains one record per drug with:
+
+- `drugName`
+- `catalogEntry`
+- `sourceExtraction`
+- `trumpRx`
+- `status`
+- `diff`
+
+The `trumpRx` object also includes:
+
+- `medGuideUrl`
+- `medGuideMatchesCatalogUrl`
+- `retrievalSteps`
+
+When a product is not found on TrumpRX, `status` is set to `new product`.
+
+## Runtime config
+
+`config/runtime.json` holds shared runtime settings:
+
+```json
+{
+  "trumpRxBaseUrl": "https://trumprx.gov/p",
+  "trumpRxParseMode": "agent-browser",
+  "llm": {
+    "baseUrl": "https://api.perplexity.ai",
+    "model": "sonar",
+    "apiKeyEnvVar": "PERPLEXITY_API_KEY",
+    "apiKeyFile": "./config/perplexity-key-pf.txt"
+  }
+}
+```
+
+- `llm.baseUrl`: Perplexity API base URL used when `--doc-qa-extractor ai`
+- `llm.model`: Perplexity model name sent to the chat completions API
+- `llm.apiKeyEnvVar`: environment variable name to read the API key from, defaulting to `PERPLEXITY_API_KEY`
+- `llm.apiKeyFile`: optional local file path used by the CLI to preload the API key for document QA extraction
