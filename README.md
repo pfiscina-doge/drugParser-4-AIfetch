@@ -79,6 +79,12 @@ Use the TrumpRX PDF parser explicitly:
 npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trumprx-parse-mode pdf
 ```
 
+Update `config/question-patterns.json` from discovered questions in a saved run output:
+
+```bash
+npm run update:question-patterns -- --input ./examples/mayzent.trumprx-pdf.output.json
+```
+
 Mayzent PDF example saved in the repo:
 
 - `examples/mayzent.trumprx-pdf.command.txt`: exact command used for a Mayzent run with the TrumpRX side forced to PDF parsing

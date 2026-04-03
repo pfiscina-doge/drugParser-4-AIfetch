@@ -21,6 +21,17 @@ function isQuestionCandidate(line, compiledRegexes, knownStarts) {
   return compiledRegexes.some((regex) => regex.test(line.text));
 }
 
+function shouldTreatAsAnswerContinuation(line, currentQuestion) {
+  if (!currentQuestion || !line?.text) {
+    return false;
+  }
+
+  return (
+    /^Tell your healthcare provider /i.test(line.text)
+    || /^Before taking .+, tell your healthcare provider /i.test(line.text)
+  );
+}
+
 export function normalizeSectionText(text) {
   return text
     .replace(/\r/g, "\n")
@@ -40,6 +51,11 @@ export function extractQaPairs({ drugName, text, questionPatterns }) {
   let current = null;
 
   for (const line of lines) {
+    if (shouldTreatAsAnswerContinuation(line, current?.question)) {
+      current.answer = current.answer ? `${current.answer}\n${line.text}` : line.text;
+      continue;
+    }
+
     if (isQuestionCandidate(line, compiledRegexes, questionPatterns.knownQuestionStarts)) {
       if (current) {
         qaPairs.push(current);
@@ -77,11 +93,11 @@ function mergeContinuationQuestions(pairs) {
     const previous = merged[merged.length - 1];
 
     if (
-      previous &&
-      /^Before using .+, tell your healthcare provider about all of your medical conditions/i.test(previous.question) &&
-      (
-        /^Tell your healthcare provider about all the medicines you take/i.test(pair.question) ||
-        /^Before using .+, talk to your healthcare provider about low blood sugar and how to manage it/i.test(pair.question)
+      previous
+      && /^Before using .+, tell your healthcare provider about all of your medical conditions/i.test(previous.question)
+      && (
+        /^Tell your healthcare provider about all the medicines you take/i.test(pair.question)
+        || /^Before using .+, talk to your healthcare provider about low blood sugar and how to manage it/i.test(pair.question)
       )
     ) {
       previous.answer = `${previous.answer}\n${pair.question} ${pair.answer}`.trim();

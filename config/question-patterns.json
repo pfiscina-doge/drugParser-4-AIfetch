@@ -10,7 +10,8 @@
     "What are the possible side effects of",
     "How should I store",
     "General information about the safe and effective use of",
-    "What are the ingredients in"
+    "What are the ingredients in",
+    "What should I tell my healthcare provider before taking"
   ],
   "questionRegexes": [
     "^(What .+\\?)$",
@@ -20,6 +21,15 @@
     "^(Before taking .+)$",
     "^(Tell your healthcare provider .+)$",
     "^(What are the possible side effects .+\\?)$",
-    "^(General information about the safe and effective use of .+\\.?$)"
+    "^(General information about the safe and effective use of .+\\.?$)",
+    "^(Before taking .+, tell your healthcare provider about all of your medical conditions, including if you[?.:]?)$",
+    "^(General information about the safe and effective use of .+[?.:]?)$",
+    "^(How should I store .+[?.:]?)$",
+    "^(How should I take .+[?.:]?)$",
+    "^(What are the ingredients in .+[?.:]?)$",
+    "^(What are the possible side effects of .+[?.:]?)$",
+    "^(What is .+[?.:]?)$",
+    "^(What is the most important information I should know about .+[?.:]?)$",
+    "^(What should I tell my healthcare provider before taking .+[?.:]?)$"
   ]
 }

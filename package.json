@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/cli.mjs",
     "run:sample": "node src/cli.mjs --catalog ./examples/catalog.sample.json --output ./output/sample-diff.json --save-intermediate",
-    "ask:perplexity": "node src/perplexity-ask.mjs"
+    "ask:perplexity": "node src/perplexity-ask.mjs",
+    "update:question-patterns": "node src/update-question-patterns.mjs"
   }
 }
