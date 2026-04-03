@@ -60,6 +60,7 @@ export async function runPipeline({ catalog, config }) {
           qaPairs: []
         },
         status: "processing error",
+        setSimilarityScore: 0,
         diff: []
       });
     }
@@ -146,6 +147,7 @@ async function processDrug({
         qaPairs: []
       },
       status: "new drug- not found on trumpRX",
+      setSimilarityScore: 0,
       diff: []
     };
   }
@@ -158,7 +160,7 @@ async function processDrug({
     trumpRxParseMode: config.trumpRxParseMode
   });
 
-  const diff = await diffEngine.compareQaSets({
+  const diffResult = await diffEngine.compareQaSets({
     drugName,
     sourceQa: extractedQa,
     productionQa
@@ -196,7 +198,8 @@ async function processDrug({
       qaPairs: productionQa
     },
     status,
-    diff: status === "both questionsfound" ? diff : []
+    setSimilarityScore: status === "both questionsfound" ? diffResult.setSimilarityScore : 0,
+    diff: status === "both questionsfound" ? diffResult.questionDiffs : []
   };
 }
 

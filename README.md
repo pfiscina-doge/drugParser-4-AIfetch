@@ -79,6 +79,12 @@ Use the TrumpRX PDF parser explicitly:
 npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trumprx-parse-mode pdf
 ```
 
+Mayzent PDF example saved in the repo:
+
+- `examples/mayzent.trumprx-pdf.command.txt`: exact command used for a Mayzent run with the TrumpRX side forced to PDF parsing
+- `examples/mayzent.trumprx-pdf.output.json`: captured output from that run
+- This example uses the non-AI path: `docQaExtractor=rule-based`, `diffEngine=heuristic`, and `--trumprx-parse-mode pdf`
+
 ## CLI options
 
 - `--catalog <path>`

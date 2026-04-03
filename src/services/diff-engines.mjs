@@ -51,12 +51,31 @@ function bestMatch(sourcePair, productionQa) {
   };
 }
 
+function calculateSetSimilarityScore(questionDiffs, sourceQa, productionQa) {
+  if (sourceQa.length === 0 && productionQa.length === 0) {
+    return 1;
+  }
+
+  if (sourceQa.length === 0 || productionQa.length === 0) {
+    return 0;
+  }
+
+  const totalQuestionSimilarity = questionDiffs.reduce(
+    (sum, item) => sum + item.similarityScore,
+    0
+  );
+  const averageQuestionSimilarity = totalQuestionSimilarity / sourceQa.length;
+  const countPenalty = Math.min(sourceQa.length, productionQa.length) / Math.max(sourceQa.length, productionQa.length);
+
+  return Number((averageQuestionSimilarity * countPenalty).toFixed(3));
+}
+
 function createHeuristicEngine() {
   return {
     name: "heuristic",
 
     async compareQaSets({ drugName, sourceQa, productionQa }) {
-      return sourceQa.map((pair, index) => {
+      const questionDiffs = sourceQa.map((pair, index) => {
         const match = bestMatch(pair, productionQa);
         return {
           drugName,
@@ -68,6 +87,11 @@ function createHeuristicEngine() {
           ...match
         };
       });
+
+      return {
+        questionDiffs,
+        setSimilarityScore: calculateSetSimilarityScore(questionDiffs, sourceQa, productionQa)
+      };
     }
   };
 }
