@@ -54,6 +54,19 @@ Use AI extraction with the default Perplexity config. If `llm.apiKeyFile` is set
 npm start --   --drugs duavee,zepbound   --output ./output/results.json   --doc-qa-extractor ai
 ```
 
+Ask Perplexity a direct question and parse the response into JSON output:
+
+```bash
+PERPLEXITY_API_KEY=your_key_here npm run ask:perplexity -- --question "What is the capital of France?"
+```
+
+If you want structured output, ask for JSON in the prompt. The helper returns:
+
+- `answer`: parsed text content
+- `parsedJson`: JSON object when the model answered with valid JSON, otherwise `null`
+- `citations`: citations array when present
+- `usage`: token usage metadata when present
+
 Use the TrumpRX browser accordion parser:
 
 ```bash
@@ -94,6 +107,8 @@ npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trum
   - includes `trumpRxBaseUrl`, `trumpRxParseMode`, and `llm` settings
 - `src/cli.mjs`: command-line entrypoint
 - `src/pipeline.mjs`: main orchestration
+- `src/perplexity-ask.mjs`: small CLI utility for direct Perplexity questions
+- `src/services/perplexity-client.mjs`: shared Perplexity API caller and response parser
 - `src/services/qa-extractors.mjs`: switchable rule-based and AI-backed document QA extraction
 - `src/services/trumprx-agent-browser.mjs`: TrumpRX accordion extraction using `agent-browser`
 
