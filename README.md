@@ -82,13 +82,21 @@ npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trum
 Update `config/question-patterns.json` from discovered questions in a saved run output:
 
 ```bash
-npm run update:question-patterns -- --input ./examples/mayzent.trumprx-pdf.output.json
+npm run update:question-patterns -- --input ./examples/mayzent/trumprx-pdf.output.json
 ```
 
-Mayzent PDF example saved in the repo:
+Mayzent example files are saved in `examples/mayzent`.
 
-- `examples/mayzent.trumprx-pdf.command.txt`: exact command used for a Mayzent run with the TrumpRX side forced to PDF parsing
-- `examples/mayzent.trumprx-pdf.output.json`: captured output from that run
+Generate the example output with:
+
+```bash
+node src/cli.mjs --drugs mayzent --trumprx-parse-mode pdf --output ./examples/mayzent/trumprx-pdf.output.json
+```
+
+Files in `examples/mayzent`:
+
+- `trumprx-pdf.command.txt`: saved command for the Mayzent PDF example
+- `trumprx-pdf.output.json`: captured output from that run
 - This example uses the non-AI path: `docQaExtractor=rule-based`, `diffEngine=heuristic`, and `--trumprx-parse-mode pdf`
 
 ## CLI options
