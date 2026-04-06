@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFile, spawnSync } from "node:child_process";
@@ -19,75 +20,46 @@ function summarizeError(error) {
   return String(error);
 }
 
-function runAgentBrowserBatch(commands) {
-  const result = spawnSync("agent-browser", ["batch", "--json"], {
-    input: JSON.stringify(commands),
-    encoding: "utf8",
-    maxBuffer: 50 * 1024 * 1024,
-    env: { ...process.env }
-  });
-
-  if (result.error) {
-    throw result.error;
+function extractSnapshotLineText(line) {
+  const text = String(line || "").trim();
+  if (!text) {
+    return "";
   }
 
-  if (result.status !== 0) {
-    const detail = [result.stderr, result.stdout].filter(Boolean).join("\n").slice(0, 3000);
-    throw new Error(`agent-browser exited ${result.status}${detail ? `: ${detail}` : ""}`);
+  const quoted = text.match(/^[\s\-]*[a-z]+\s+"([\s\S]+?)"\s*(?:\[[^\]]+\])?$/i);
+  if (quoted) {
+    return quoted[1].replace(/\"/g, '"').trim();
   }
 
-  const rows = JSON.parse(result.stdout.trim());
-  const failed = rows.find((row) => !row.success);
-  if (failed) {
-    throw new Error(
-      `agent-browser step failed: ${JSON.stringify(failed.error || failed).slice(0, 1000)}`
-    );
-  }
-
-  return rows;
+  return text.replace(/^[\s\-]+/, "").trim();
 }
 
-function evalResults(rows) {
-  return rows
-    .filter((row) => row.command?.[0] === "eval")
-    .map((row) => row.result?.result ?? null);
-}
-
-function extractPageTextScript() {
-  return `
-(() => {
-  const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim();
-  const bodyText = normalize(document.body?.innerText || document.documentElement?.innerText || '');
-  const title = normalize(document.title || '');
-  return {
-    url: location.href,
-    title,
-    text: bodyText,
-    contentType: document.contentType || ''
-  };
-})();
-`.trim();
+function normalizeAgentBrowserSnapshot(snapshotText) {
+  return String(snapshotText || "")
+    .split("\n")
+    .map(extractSnapshotLineText)
+    .filter(Boolean)
+    .join("\n");
 }
 
 async function loadTextWithAgentBrowser(url) {
-  const commands = [
-    ["open", url],
-    ["wait", "--load", "networkidle"],
-    ["wait", "2000"],
-    ["eval", extractPageTextScript()],
-    ["close"]
-  ];
+  await execFileAsync("agent-browser", ["open", url], {
+    maxBuffer: 10 * 1024 * 1024
+  });
 
-  const rows = runAgentBrowserBatch(commands);
-  const [extracted] = evalResults(rows);
+  const { stdout } = await execFileAsync("agent-browser", ["snapshot", "-i"], {
+    maxBuffer: 20 * 1024 * 1024
+  });
 
-  if (!extracted || typeof extracted !== "object") {
-    throw new Error(`No text extracted from agent-browser for ${url}`);
+  const bodyText = normalizeAgentBrowserSnapshot(stdout);
+  if (!bodyText.trim()) {
+    throw new Error(`No text extracted from agent-browser snapshot for ${url}`);
   }
 
   return {
-    contentType: String(extracted.contentType || "text/html"),
-    bodyText: String(extracted.text || "")
+    contentType: "text/html",
+    bodyText,
+    html: ""
   };
 }
 
@@ -307,16 +279,23 @@ function createAgentBrowserAdapter() {
     async loadCatalogEntry({ catalogEntry }) {
       const cleanUrl = String(catalogEntry.url).replace(/^>+|<+$/g, "").trim();
       const payload = await loadTextWithAgentBrowser(cleanUrl);
-      const text = payload.contentType.includes("html")
-        ? stripMarkup(payload.bodyText)
-        : payload.bodyText;
-      const attributedSection = extractAttributedHtmlSection(text, catalogEntry.attributionType);
+      const htmlSnapshot = payload.html || "";
+      const textSnapshot = payload.bodyText || "";
+      const htmlText = htmlSnapshot ? stripMarkup(htmlSnapshot).replace(/\s+/g, " ").trim() : "";
+      const extractedText = textSnapshot || htmlText;
+      const attributedSection = payload.contentType.includes("html")
+        ? extractAttributedHtmlSection(extractedText, catalogEntry.attributionType)
+        : {
+            text: extractedText,
+            headingDetected: detectHeading(extractedText, catalogEntry.attributionType)
+          };
 
       return {
         url: cleanUrl,
         text: attributedSection.text,
-        rawText: payload.bodyText,
-        headingDetected: attributedSection.headingDetected || detectHeading(text, catalogEntry.attributionType)
+        rawText: textSnapshot,
+        rawHtml: htmlSnapshot,
+        headingDetected: attributedSection.headingDetected || detectHeading(extractedText, catalogEntry.attributionType)
       };
     },
 
@@ -325,7 +304,8 @@ function createAgentBrowserAdapter() {
       return {
         url,
         text: payload.bodyText,
-        rawText: payload.bodyText
+        rawText: payload.bodyText,
+        rawHtml: payload.html || ""
       };
     }
   };
