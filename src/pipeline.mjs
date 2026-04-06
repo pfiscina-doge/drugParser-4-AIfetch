@@ -7,8 +7,19 @@ import { createQaExtractor } from "./services/qa-extractors.mjs";
 import { findLocalHtmlRecord } from "./services/local-html.mjs";
 import { findTrumpRxProduct, loadTrumpRxQa } from "./services/trumprx.mjs";
 
+function isPdfCatalogUrl(url) {
+  return /\.pdf(?:\?|$)/i.test(String(url || ""));
+}
+
+export function chooseQAExtractionMethod({ catalogEntry, overrideMethod }) {
+  if (overrideMethod) {
+    return overrideMethod;
+  }
+
+  return isPdfCatalogUrl(catalogEntry?.url) ? "fetch" : "agent-browser";
+}
+
 export async function runPipeline({ catalog, config }) {
-  const browser = createBrowserAdapter(config);
   const diffEngine = createDiffEngine(config);
   const qaExtractor = createQaExtractor(config);
   const results = [];
@@ -25,7 +36,6 @@ export async function runPipeline({ catalog, config }) {
           drugName,
           catalogEntry,
           config,
-          browser,
           qaExtractor,
           diffEngine,
           discoveredQuestionFormats
@@ -38,6 +48,10 @@ export async function runPipeline({ catalog, config }) {
       results.push({
         drugName,
         catalogEntry,
+        qaExtractionMethod: chooseQAExtractionMethod({
+          catalogEntry,
+          overrideMethod: config.newDocParseMethod
+        }),
         localSourceFile: null,
         sourceExtraction: {
           sourceUrl: catalogEntry.url,
@@ -69,7 +83,7 @@ export async function runPipeline({ catalog, config }) {
   return {
     generatedAt: new Date().toISOString(),
     configUsed: {
-      newDocParseMethod: config.newDocParseMethod,
+      newDocParseMethod: config.newDocParseMethod || "auto",
       diffEngine: config.diffEngine,
       docQaExtractor: config.docQaExtractor,
       trumpRxBaseUrl: config.trumpRxBaseUrl
@@ -87,11 +101,19 @@ async function processDrug({
   drugName,
   catalogEntry,
   config,
-  browser,
   qaExtractor,
   diffEngine,
   discoveredQuestionFormats
 }) {
+  const qaExtractionMethod = chooseQAExtractionMethod({
+    catalogEntry,
+    overrideMethod: config.newDocParseMethod
+  });
+  const browser = createBrowserAdapter({
+    ...config,
+    newDocParseMethod: qaExtractionMethod
+  });
+
   const sourceDocument = await browser.loadCatalogEntry({
     drugName,
     catalogEntry
@@ -131,6 +153,7 @@ async function processDrug({
     return {
       drugName,
       catalogEntry,
+      qaExtractionMethod,
       localSourceFile: localHtmlRecord,
       sourceExtraction: {
         sourceUrl: catalogEntry.url,
@@ -182,6 +205,7 @@ async function processDrug({
   return {
     drugName,
     catalogEntry,
+    qaExtractionMethod,
     localSourceFile: localHtmlRecord,
     sourceExtraction: {
       sourceUrl: catalogEntry.url,

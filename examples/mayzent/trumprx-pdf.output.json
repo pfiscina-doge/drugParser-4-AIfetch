@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-06T18:17:32.605Z",
+  "generatedAt": "2026-04-06T19:09:24.964Z",
   "configUsed": {
-    "newDocParseMethod": "fetch",
+    "newDocParseMethod": "auto",
     "diffEngine": "heuristic",
     "docQaExtractor": "rule-based",
     "trumpRxBaseUrl": "https://trumprx.gov/p"
@@ -24,6 +24,7 @@
         "contentType": "pdf",
         "attributionType": "medguide"
       },
+      "qaExtractionMethod": "fetch",
       "localSourceFile": null,
       "sourceExtraction": {
         "sourceUrl": "https://www.novartis.com/us-en/sites/novartis_us/files/mayzent_pmg_0.pdf",

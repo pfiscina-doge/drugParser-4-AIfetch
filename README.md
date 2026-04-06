@@ -33,10 +33,12 @@ Use a custom catalog file explicitly:
 npm start -- --catalog ./examples/catalog.sample.json --output ./output/results.json --save-intermediate
 ```
 
-Choose how new source documents are parsed with `--new-doc-parse-method`:
+At the start of each drug run, `chooseQAExtractionMethod` picks the document parser automatically unless you override it with `--new-doc-parse-method`:
 
-- `fetch`: default, uses HTTP fetch/curl plus PDF text extraction
-- `agent-browser`: placeholder for a future interactive browser-backed document parser
+- catalog URL ending in `.pdf`: uses the Mayzent-style `fetch` path
+- catalog URL not ending in `.pdf`: uses the Chantix-style `agent-browser` path
+
+You can still override that choice explicitly with `--new-doc-parse-method <fetch|agent-browser>`.
 
 Choose how document text is turned into question/answer pairs with `--doc-qa-extractor`:
 
@@ -113,7 +115,7 @@ Files in `examples/chantix`:
 - `--output <path>`
 - `--intermediate-dir <path>`
 - `--save-intermediate`
-- `--new-doc-parse-method <fetch|agent-browser>`
+- `--new-doc-parse-method <fetch|agent-browser>`: optional override for `chooseQAExtractionMethod`
 - `--diff-engine <heuristic|perplexity>`
 - `--doc-qa-extractor <rule-based|ai>`
 - `--llm-base-url <url>`

@@ -12,7 +12,7 @@ function parseArgs(argv) {
     output: "",
     intermediateDir: "./output/intermediate",
     saveIntermediate: false,
-    newDocParseMethod: "fetch",
+    newDocParseMethod: "",
     diffEngine: "heuristic",
     docQaExtractor: "rule-based",
     llmBaseUrl: "",

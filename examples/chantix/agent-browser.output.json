@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-06T18:17:44.514Z",
+  "generatedAt": "2026-04-06T19:09:42.416Z",
   "configUsed": {
-    "newDocParseMethod": "agent-browser",
+    "newDocParseMethod": "auto",
     "diffEngine": "heuristic",
     "docQaExtractor": "rule-based",
     "trumpRxBaseUrl": "https://trumprx.gov/p"
@@ -25,6 +25,7 @@
         "contentType": "html",
         "attributionType": "patient-info"
       },
+      "qaExtractionMethod": "agent-browser",
       "localSourceFile": null,
       "sourceExtraction": {
         "sourceUrl": "https://labeling.pfizer.com/ShowLabeling.aspx?id=557",
