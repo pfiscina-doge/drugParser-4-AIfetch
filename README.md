@@ -45,8 +45,7 @@ Choose how document text is turned into question/answer pairs with `--doc-qa-ext
 
 How these two switches apply:
 
-- `--doc-qa-extractor` controls question/answer extraction for the source catalog document and for TrumpRX when `--trumprx-parse-mode pdf`
-- `--trumprx-parse-mode agent-browser` gathers the TrumpRX question/answer pairs directly from the page accordions instead of using the document QA extractor
+- `--doc-qa-extractor` controls question/answer extraction for both the source catalog document and the TrumpRX patient-information PDF
 
 Use AI extraction with the default Perplexity config. If `llm.apiKeyFile` is set in runtime config, the CLI will preload that key automatically:
 
@@ -67,17 +66,12 @@ If you want structured output, ask for JSON in the prompt. The helper returns:
 - `citations`: citations array when present
 - `usage`: token usage metadata when present
 
-Use the TrumpRX browser accordion parser:
+TrumpRX now follows the same document-parsing methodology as the source catalog document. The pipeline loads the TrumpRX patient-information PDF and runs it through the configured document parser and QA extractor.
 
 ```bash
-npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trumprx-parse-mode agent-browser
+npm start --   --drugs duavee,zepbound   --output ./output/results.json
 ```
 
-Use the TrumpRX PDF parser explicitly:
-
-```bash
-npm start --   --drugs duavee,zepbound   --output ./output/results.json   --trumprx-parse-mode pdf
-```
 
 Update `config/question-patterns.json` from discovered questions in a saved run output:
 
@@ -85,19 +79,31 @@ Update `config/question-patterns.json` from discovered questions in a saved run 
 npm run update:question-patterns -- --input ./examples/mayzent/trumprx-pdf.output.json
 ```
 
-Mayzent example files are saved in `examples/mayzent`.
+Example files are saved in `examples/mayzent` and `examples/chantix`.
 
-Generate the example output with:
+Generate the Mayzent example output with:
 
 ```bash
-node src/cli.mjs --drugs mayzent --trumprx-parse-mode pdf --output ./examples/mayzent/trumprx-pdf.output.json
+node src/cli.mjs --drugs mayzent --output ./examples/mayzent/trumprx-pdf.output.json
 ```
 
 Files in `examples/mayzent`:
 
-- `trumprx-pdf.command.txt`: saved command for the Mayzent PDF example
+- `trumprx-pdf.command.txt`: saved command for the Mayzent example
 - `trumprx-pdf.output.json`: captured output from that run
-- This example uses the non-AI path: `docQaExtractor=rule-based`, `diffEngine=heuristic`, and `--trumprx-parse-mode pdf`
+- This example uses the non-AI path: `docQaExtractor=rule-based` and `diffEngine=heuristic`
+
+Generate the Chantix `agent-browser` example output with:
+
+```bash
+node src/cli.mjs --drugs chantix --new-doc-parse-method agent-browser --output ./examples/chantix/agent-browser.output.json
+```
+
+Files in `examples/chantix`:
+
+- `agent-browser.command.txt`: saved command for the Chantix `agent-browser` example
+- `agent-browser.output.json`: captured output from that run
+- This example follows the TrumpRx `View Patient Information (PDF).` href and then parses that target with the same `agent-browser` document-loading flow used for the source document
 
 ## CLI options
 
@@ -115,7 +121,6 @@ Files in `examples/mayzent`:
 - `--llm-model <model>`
 - `--source-html-dir <path>`
 - `--trumprx-base-url <url>`
-- `--trumprx-parse-mode <pdf|agent-browser>`
 - `--perplexity-base-url <url>`
 
 ## Key files
@@ -124,13 +129,13 @@ Files in `examples/mayzent`:
 - `config/aliases.json`: name-to-alias mapping for TrumpRX lookup
 - `config/question-patterns.json`: known question prefixes and matching rules
 - `config/runtime.json`: runtime endpoints such as the TrumpRX base URL
-  - includes `trumpRxBaseUrl`, `trumpRxParseMode`, and `llm` settings
+  - includes `trumpRxBaseUrl` and `llm` settings
 - `src/cli.mjs`: command-line entrypoint
 - `src/pipeline.mjs`: main orchestration
 - `src/perplexity-ask.mjs`: small CLI utility for direct Perplexity questions
 - `src/services/perplexity-client.mjs`: shared Perplexity API caller and response parser
 - `src/services/qa-extractors.mjs`: switchable rule-based and AI-backed document QA extraction
-- `src/services/trumprx-agent-browser.mjs`: TrumpRX accordion extraction using `agent-browser`
+- `src/services/trumprx-agent-browser.mjs`: TrumpRX `agent-browser` helpers for locating the patient-information href on the product page
 
 ## Output shape
 
@@ -158,7 +163,6 @@ When a product is not found on TrumpRX, `status` is set to `new product`.
 ```json
 {
   "trumpRxBaseUrl": "https://trumprx.gov/p",
-  "trumpRxParseMode": "agent-browser",
   "llm": {
     "baseUrl": "https://api.perplexity.ai",
     "model": "sonar",

@@ -1,1 +1,1 @@
-node src/cli.mjs --drugs mayzent --trumprx-parse-mode pdf --output ./examples/mayzent/trumprx-pdf.output.json
+node src/cli.mjs --drugs mayzent --output ./examples/mayzent/trumprx-pdf.output.json

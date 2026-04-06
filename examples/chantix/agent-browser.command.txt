@@ -1,0 +1,1 @@
+node src/cli.mjs --drugs chantix --new-doc-parse-method agent-browser --output ./examples/chantix/agent-browser.output.json

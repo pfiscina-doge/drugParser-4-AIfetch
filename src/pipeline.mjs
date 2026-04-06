@@ -157,7 +157,7 @@ async function processDrug({
     trumpRxUrl: trumpRxMatch.url,
     browser,
     qaExtractor,
-    trumpRxParseMode: config.trumpRxParseMode
+    questionPatterns: config.questionPatterns
   });
 
   const diffResult = await diffEngine.compareQaSets({

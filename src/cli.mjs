@@ -18,7 +18,6 @@ function parseArgs(argv) {
     llmBaseUrl: "",
     llmApiKey: "",
     llmModel: "",
-    trumpRxParseMode: "",
     sourceHtmlDir: "",
     trumpRxBaseUrl: "https://trumprx.gov/p",
     perplexityBaseUrl: "https://www.perplexity.ai/"
@@ -59,9 +58,6 @@ function parseArgs(argv) {
       index += 1;
     } else if (token === "--llm-model" && next) {
       args.llmModel = next;
-      index += 1;
-    } else if (token === "--trumprx-parse-mode" && next) {
-      args.trumpRxParseMode = next;
       index += 1;
     } else if (token === "--source-html-dir" && next) {
       args.sourceHtmlDir = next;
@@ -143,7 +139,6 @@ async function main() {
       llmApiKey: args.llmApiKey || llmApiKeyFromFile,
       llmApiKeyEnvVar: llmConfig.apiKeyEnvVar || "PERPLEXITY_API_KEY",
       llmModel: args.llmModel || llmConfig.model || "",
-      trumpRxParseMode: args.trumpRxParseMode || runtimeConfig.trumpRxParseMode || "pdf",
       saveIntermediate: args.saveIntermediate,
       intermediateDir,
       sourceHtmlDir: args.sourceHtmlDir ? path.resolve(rootDir, args.sourceHtmlDir) : "",

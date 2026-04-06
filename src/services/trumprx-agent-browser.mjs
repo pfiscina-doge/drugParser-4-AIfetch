@@ -132,13 +132,15 @@ function extractPdfLinkScript() {
   const anchors = Array.from(document.querySelectorAll('a[href]'));
   const candidates = anchors.map((anchor) => ({
     href: anchor.href,
-    text: (anchor.innerText || anchor.textContent || '').replace(/\s+/g, ' ').trim()
+    text: (anchor.innerText || anchor.textContent || '').replace(/\\s+/g, ' ').trim()
   }));
 
-  const preferred = candidates.find((item) => /view .*pdf/i.test(item.text) && /\.pdf(\?|$)/i.test(item.href))
-    || candidates.find((item) => /patient information/i.test(item.text) && /\.pdf(\?|$)/i.test(item.href))
-    || candidates.find((item) => /medication guide/i.test(item.text) && /\.pdf(\?|$)/i.test(item.href))
-    || candidates.find((item) => /\.pdf(\?|$)/i.test(item.href));
+  const preferred = candidates.find((item) => /view\\s+patient\\s+information\\s*\\(pdf\\)/i.test(item.text))
+    || candidates.find((item) => /patient information/i.test(item.text) && /\\.pdf(\\?|$)/i.test(item.href))
+    || candidates.find((item) => /patient information/i.test(item.text))
+    || candidates.find((item) => /medication guide/i.test(item.text) && /\\.pdf(\\?|$)/i.test(item.href))
+    || candidates.find((item) => /medication guide/i.test(item.text))
+    || candidates.find((item) => /\\.pdf(\\?|$)/i.test(item.href));
 
   return {
     url: location.href,

@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-04-06T18:00:29.399Z",
+  "configUsed": {
+    "newDocParseMethod": "fetch",
+    "diffEngine": "heuristic",
+    "docQaExtractor": "rule-based",
+    "trumpRxBaseUrl": "https://trumprx.gov/p"
+  },
+  "discoveredQuestionFormats": [],
+  "results": [
+    {
+      "drugName": "chantix",
+      "catalogEntry": {
+        "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=557",
+        "contentType": "html",
+        "attributionType": "patient-info"
+      },
+      "localSourceFile": null,
+      "sourceExtraction": {
+        "sourceUrl": "https://labeling.pfizer.com/ShowLabeling.aspx?id=557",
+        "headingDetected": "Medication Guide",
+        "qaPairs": []
+      },
+      "trumpRx": {
+        "found": true,
+        "status": "no questions found on trumpRx",
+        "url": "https://trumprx.gov/p/chantix",
+        "medGuideUrl": "",
+        "medGuideMatchesCatalogUrl": false,
+        "retrievalSteps": [
+          {
+            "step": "construct-url",
+            "status": "success",
+            "detail": "https://trumprx.gov/p/chantix"
+          },
+          {
+            "step": "fetch-page",
+            "status": "success",
+            "detail": "Fetched TrumpRX product page."
+          },
+          {
+            "step": "find-patient-information-pdf",
+            "status": "warning",
+            "detail": "No TrumpRX patient information PDF link detected."
+          }
+        ],
+        "qaPairs": []
+      },
+      "status": "no questions found on trumpRx",
+      "setSimilarityScore": 0,
+      "diff": []
+    }
+  ]
+}
