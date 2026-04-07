@@ -1,0 +1,1 @@
+node src/cli.mjs --drugs chantix --doc-qa-extractor agentic --only-from-catalog-url --output ./examples/chantix/agentic-only-from-catalog.output.json

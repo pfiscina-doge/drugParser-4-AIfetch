@@ -44,7 +44,7 @@ Choose how document text is turned into question/answer pairs with `--doc-qa-ext
 
 - `rule-based`: default, uses the local parser heuristics
 - `ai`: uses the configured LLM endpoint to extract question/answer pairs from already-loaded document text
-- `agentic`: asks the configured LLM to read the catalog URL directly and return JSON question/answer pairs
+- `agentic`: asks the configured LLM to extract question/answer pairs from the already-loaded document text snapshot and return JSON
 
 How these two switches apply:
 
@@ -84,7 +84,9 @@ npm run update:question-patterns -- --input ./examples/mayzent/trumprx-pdf.outpu
 
 Example files are saved in `examples/mayzent` and `examples/chantix`.
 
-Generate the Mayzent example output with:
+Rule-based examples:
+
+Generate the Mayzent rule-based example output with:
 
 ```bash
 node src/cli.mjs --drugs mayzent --output ./examples/mayzent/trumprx-pdf.output.json
@@ -92,21 +94,33 @@ node src/cli.mjs --drugs mayzent --output ./examples/mayzent/trumprx-pdf.output.
 
 Files in `examples/mayzent`:
 
-- `trumprx-pdf.command.txt`: saved command for the Mayzent example
+- `trumprx-pdf.command.txt`: saved command for the Mayzent rule-based example
 - `trumprx-pdf.output.json`: captured output from that run
-- This example uses the non-AI path: `docQaExtractor=rule-based` and `diffEngine=heuristic`
+- `agentic-only-from-catalog.command.txt`: saved command for the Mayzent agentic example
+- `agentic-only-from-catalog.output.json`: captured output from the Mayzent agentic example
+- The rule-based example uses `docQaExtractor=rule-based` and `diffEngine=heuristic`
+- The agentic example uses `docQaExtractor=agentic` with `--only-from-catalog-url`
 
-Generate the Chantix `agent-browser` example output with:
+Generate the Chantix `agent-browser` rule-based example output with:
 
 ```bash
 node src/cli.mjs --drugs chantix --new-doc-parse-method agent-browser --output ./examples/chantix/agent-browser.output.json
 ```
 
+Generate the Chantix agentic example output with:
+
+```bash
+node src/cli.mjs --drugs chantix --doc-qa-extractor agentic --only-from-catalog-url --output ./examples/chantix/agentic-only-from-catalog.output.json
+```
+
 Files in `examples/chantix`:
 
-- `agent-browser.command.txt`: saved command for the Chantix `agent-browser` example
+- `agent-browser.command.txt`: saved command for the Chantix `agent-browser` rule-based example
 - `agent-browser.output.json`: captured output from that run
-- This example follows the TrumpRx `View Patient Information (PDF).` href and then parses that target with the same `agent-browser` document-loading flow used for the source document
+- `agentic-only-from-catalog.command.txt`: saved command for the Chantix agentic example
+- `agentic-only-from-catalog.output.json`: captured output from the Chantix agentic example
+- The Chantix rule-based example follows the TrumpRx `View Patient Information (PDF).` href and then parses that target with the same `agent-browser` document-loading flow used for the source document
+- The Chantix agentic example uses `docQaExtractor=agentic` with `--only-from-catalog-url`
 
 ## CLI options
 
@@ -117,6 +131,7 @@ Files in `examples/chantix`:
 - `--intermediate-dir <path>`
 - `--save-intermediate`
 - `--agentic-debug`: when using `agentic`, writes the exact prompt and raw response under the intermediate directory
+- `--only-from-catalog-url`: when using `agentic`, tells the LLM to use only the parsed content from the source URL and not follow links
 - `--new-doc-parse-method <fetch|agent-browser>`: optional override for `chooseQAExtractionMethod`
 - `--diff-engine <heuristic|perplexity>`
 - `--doc-qa-extractor <rule-based|ai|agentic>`
