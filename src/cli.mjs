@@ -12,6 +12,7 @@ function parseArgs(argv) {
     output: "",
     intermediateDir: "./output/intermediate",
     saveIntermediate: false,
+    agenticDebug: false,
     newDocParseMethod: "",
     diffEngine: "heuristic",
     docQaExtractor: "rule-based",
@@ -70,6 +71,8 @@ function parseArgs(argv) {
       index += 1;
     } else if (token === "--save-intermediate") {
       args.saveIntermediate = true;
+    } else if (token === "--agentic-debug") {
+      args.agenticDebug = true;
     }
   }
 
@@ -140,6 +143,7 @@ async function main() {
       llmApiKeyEnvVar: llmConfig.apiKeyEnvVar || "PERPLEXITY_API_KEY",
       llmModel: args.llmModel || llmConfig.model || "",
       saveIntermediate: args.saveIntermediate,
+      agenticDebug: args.agenticDebug,
       intermediateDir,
       sourceHtmlDir: args.sourceHtmlDir ? path.resolve(rootDir, args.sourceHtmlDir) : "",
       trumpRxBaseUrl: args.trumpRxBaseUrl || runtimeConfig.trumpRxBaseUrl,

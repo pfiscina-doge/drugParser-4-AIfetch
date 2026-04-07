@@ -43,7 +43,8 @@ You can still override that choice explicitly with `--new-doc-parse-method <fetc
 Choose how document text is turned into question/answer pairs with `--doc-qa-extractor`:
 
 - `rule-based`: default, uses the local parser heuristics
-- `ai`: uses the configured LLM endpoint to extract question/answer pairs
+- `ai`: uses the configured LLM endpoint to extract question/answer pairs from already-loaded document text
+- `agentic`: asks the configured LLM to read the catalog URL directly and return JSON question/answer pairs
 
 How these two switches apply:
 
@@ -115,9 +116,10 @@ Files in `examples/chantix`:
 - `--output <path>`
 - `--intermediate-dir <path>`
 - `--save-intermediate`
+- `--agentic-debug`: when using `agentic`, writes the exact prompt and raw response under the intermediate directory
 - `--new-doc-parse-method <fetch|agent-browser>`: optional override for `chooseQAExtractionMethod`
 - `--diff-engine <heuristic|perplexity>`
-- `--doc-qa-extractor <rule-based|ai>`
+- `--doc-qa-extractor <rule-based|ai|agentic>`
 - `--llm-base-url <url>`
 - `--llm-api-key <key>`
 - `--llm-model <model>`
