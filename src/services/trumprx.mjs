@@ -268,13 +268,26 @@ export async function loadTrumpRxQa({
     return [];
   }
 
+  const trumpRxCatalogEntry = {
+    url: patientInfoPdfUrl,
+    contentType: /\.pdf(\?|$)/i.test(patientInfoPdfUrl) ? "pdf" : "html",
+    attributionType: "patient-info"
+  };
+
+  if (qaExtractor.name === "agentic" && typeof qaExtractor.extractCatalogEntry === "function") {
+    const agenticResult = await qaExtractor.extractCatalogEntry({
+      drugName: `${drugName}-trumprx`,
+      catalogEntry: trumpRxCatalogEntry,
+      browser,
+      questionPatterns,
+      attributionType: "patient-info"
+    });
+    return agenticResult.qaPairs;
+  }
+
   const pdfDocument = await browser.loadCatalogEntry({
     drugName: `${drugName}-trumprx-pdf`,
-    catalogEntry: {
-      url: patientInfoPdfUrl,
-      contentType: /\.pdf(\?|$)/i.test(patientInfoPdfUrl) ? "pdf" : "html",
-      attributionType: "patient-info"
-    }
+    catalogEntry: trumpRxCatalogEntry
   });
 
   return qaExtractor.extract({

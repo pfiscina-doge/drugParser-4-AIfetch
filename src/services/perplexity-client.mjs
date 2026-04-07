@@ -5,6 +5,19 @@ function resolveApiKey(config = {}) {
     || "";
 }
 
+function tryParseJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function extractJsonFromFence(text) {
+  const match = String(text || "").trim().match(/^```(?:json)?\s*\n([\s\S]*?)\n```\s*$/i);
+  return match ? match[1].trim() : "";
+}
+
 function parseMessageContent(content) {
   const text = Array.isArray(content)
     ? content
@@ -30,17 +43,27 @@ function parseMessageContent(content) {
     };
   }
 
-  try {
+  const directJson = tryParseJson(trimmed);
+  if (directJson) {
     return {
       text: trimmed,
-      json: JSON.parse(trimmed)
-    };
-  } catch {
-    return {
-      text: trimmed,
-      json: null
+      json: directJson
     };
   }
+
+  const fencedJsonText = extractJsonFromFence(trimmed);
+  const fencedJson = fencedJsonText ? tryParseJson(fencedJsonText) : null;
+  if (fencedJson) {
+    return {
+      text: trimmed,
+      json: fencedJson
+    };
+  }
+
+  return {
+    text: trimmed,
+    json: null
+  };
 }
 
 function trimForError(value, maxLength = 400) {

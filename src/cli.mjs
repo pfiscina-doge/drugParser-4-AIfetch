@@ -13,6 +13,7 @@ function parseArgs(argv) {
     intermediateDir: "./output/intermediate",
     saveIntermediate: false,
     agenticDebug: false,
+    onlyFromCatalogURL: false,
     newDocParseMethod: "",
     diffEngine: "heuristic",
     docQaExtractor: "rule-based",
@@ -73,6 +74,8 @@ function parseArgs(argv) {
       args.saveIntermediate = true;
     } else if (token === "--agentic-debug") {
       args.agenticDebug = true;
+    } else if (token === "--only-from-catalog-url") {
+      args.onlyFromCatalogURL = true;
     }
   }
 
@@ -144,6 +147,7 @@ async function main() {
       llmModel: args.llmModel || llmConfig.model || "",
       saveIntermediate: args.saveIntermediate,
       agenticDebug: args.agenticDebug,
+      onlyFromCatalogURL: args.onlyFromCatalogURL,
       intermediateDir,
       sourceHtmlDir: args.sourceHtmlDir ? path.resolve(rootDir, args.sourceHtmlDir) : "",
       trumpRxBaseUrl: args.trumpRxBaseUrl || runtimeConfig.trumpRxBaseUrl,

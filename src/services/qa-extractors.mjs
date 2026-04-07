@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { askPerplexity } from "./perplexity-client.mjs";
-import { extractQaPairs as extractQaPairsRuleBased } from "./question-extractor.mjs";
+import { extractQaPairs as extractQaPairsRuleBased, normalizeSectionText } from "./question-extractor.mjs";
 
 function buildExtractionPrompt({ drugName, documentUrl, text, questionPatterns }) {
   const knownStarts = (questionPatterns?.knownQuestionStarts || []).join("; ");
@@ -35,28 +35,56 @@ function buildExtractionPrompt({ drugName, documentUrl, text, questionPatterns }
   ].join("\n");
 }
 
-function buildAgenticPrompt({ drugName, documentUrl, questionPatterns }) {
+function buildAgenticPrompt({ drugName, documentUrl, text, questionPatterns, onlyFromCatalogURL }) {
+  const knownQuestions = questionPatterns?.knownQuestionStarts || [];
+
   return [
     "Using this list of known questions:",
-    JSON.stringify(questionPatterns || {}, null, 2),
-    `read the html or pdf at this location: ${documentUrl || ""}`,
+    JSON.stringify(knownQuestions, null, 2),
     `for the ${drugName}`,
+    `read the document content gathered from: ${documentUrl || ""}`,
     "produce a json that contains the text of the questions in this format:",
     '{"qaPairs":[{"id":"DRUG_SLUG-1","question":"...","answer":"..."}]}',
     "Rules:",
     "- Return valid JSON only.",
-    "- Use the exact drug slug and URL provided above.",
-    "- Read the content at the URL directly; do not rely on prior knowledge.",
+    "- Use the exact drug slug and source URL provided above.",
+    "- Use only the document text below; do not rely on prior knowledge.",
+    ...(onlyFromCatalogURL
+      ? ["- Only use the content parsed from the source URL above.", "- Do not follow links or use content from any other URLs."]
+      : []),
     "- Questions should end in a '?'.",
     "- The answer text should be the text following that question up to the next question.",
     "- Preserve bullet points in the answer text.",
     "- Preserve the wording from the document whenever possible.",
     "- If there are no matching questions, return {\"qaPairs\":[]}.",
-    "- Use ids in the output if you want, but they will be normalized by the caller."
+    "- Use ids in the output if you want, but they will be normalized by the caller.",
+    "Document text:",
+    text
   ].join("\n");
 }
 
-async function writeAgenticDebugArtifacts({ config, drugName, prompt, result, error }) {
+async function constructPrompt({ drugName, catalogEntry, browser, questionPatterns, config }) {
+  const sourceDocument = await browser.loadCatalogEntry({
+    drugName,
+    catalogEntry
+  });
+  const sourceText = normalizeSectionText(sourceDocument.text);
+  const prompt = buildAgenticPrompt({
+    drugName,
+    documentUrl: catalogEntry?.url,
+    text: sourceText,
+    questionPatterns,
+    onlyFromCatalogURL: config.onlyFromCatalogURL
+  });
+
+  return {
+    prompt,
+    sourceDocument,
+    sourceText
+  };
+}
+
+async function writeAgenticDebugArtifacts({ config, drugName, prompt, result, error, commandEquivalent }) {
   if (!config.agenticDebug) {
     return;
   }
@@ -67,12 +95,16 @@ async function writeAgenticDebugArtifacts({ config, drugName, prompt, result, er
 
   const payload = error
     ? {
+        commandEquivalent,
         error: error instanceof Error ? error.message : String(error || ""),
+        onlyFromCatalogURL: Boolean(config.onlyFromCatalogURL),
         raw: result?.raw || null,
         parsedJson: result?.parsedJson || null,
         answer: result?.answer || ""
       }
     : {
+        commandEquivalent,
+        onlyFromCatalogURL: Boolean(config.onlyFromCatalogURL),
         raw: result?.raw || null,
         parsedJson: result?.parsedJson || null,
         answer: result?.answer || ""
@@ -143,7 +175,7 @@ async function callLlmExtractor({ config, prompt }) {
   return parsed.qaPairs;
 }
 
-async function callAgenticExtractor({ config, drugName, documentUrl, questionPatterns }) {
+async function callAgenticExtractor({ config, drugName, prompt }) {
   const apiKey = config.llmApiKey
     || process.env.LLM_API_KEY
     || process.env[config.llmApiKeyEnvVar || "PERPLEXITY_API_KEY"]
@@ -157,12 +189,7 @@ async function callAgenticExtractor({ config, drugName, documentUrl, questionPat
     );
   }
 
-  const prompt = buildAgenticPrompt({
-    drugName,
-    documentUrl,
-    questionPatterns
-  });
-
+  const commandEquivalent = `NODE_TLS_REJECT_UNAUTHORIZED=0 npm run ask:perplexity -- --api-key \"${apiKey}\" --model \"${model}\" --base-url \"${baseUrl}\" --system-prompt \"Read the supplied drug label text, extract matching question and answer pairs, and return strict JSON only.\" --question @${path.resolve(config.intermediateDir, "agentic-debug", `${drugName}.prompt.txt`)}`;
   const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -173,11 +200,11 @@ async function callAgenticExtractor({ config, drugName, documentUrl, questionPat
       apiKey,
       model,
       baseUrl,
-      systemPrompt: "Read the linked drug label document, extract matching question and answer pairs, and return strict JSON only.",
+      systemPrompt: "Read the supplied drug label text, extract matching question and answer pairs, and return strict JSON only.",
       temperature: 0
     });
 
-    await writeAgenticDebugArtifacts({ config, drugName, prompt, result });
+    await writeAgenticDebugArtifacts({ config, drugName, prompt, result, commandEquivalent });
 
     const parsed = result?.parsedJson;
     if (!parsed || !Array.isArray(parsed.qaPairs)) {
@@ -186,7 +213,7 @@ async function callAgenticExtractor({ config, drugName, documentUrl, questionPat
 
     return parsed.qaPairs;
   } catch (error) {
-    await writeAgenticDebugArtifacts({ config, drugName, prompt, result, error });
+    await writeAgenticDebugArtifacts({ config, drugName, prompt, result, error, commandEquivalent });
     throw error;
   } finally {
     if (previousTlsSetting === undefined) {
@@ -236,14 +263,40 @@ function createAiExtractor(config) {
 function createAgenticExtractor(config) {
   return {
     name: "agentic",
-    async extract({ drugName, documentUrl, questionPatterns }) {
+    constructPrompt,
+    async extract({ drugName, documentUrl, text, questionPatterns }) {
+      const prompt = buildAgenticPrompt({
+        drugName,
+        documentUrl,
+        text: normalizeSectionText(text),
+        questionPatterns,
+        onlyFromCatalogURL: config.onlyFromCatalogURL
+      });
       const qaPairs = await callAgenticExtractor({
         config,
         drugName,
-        documentUrl,
-        questionPatterns
+        prompt
       });
       return normalizeQaPairs(drugName, qaPairs);
+    },
+    async extractCatalogEntry({ drugName, catalogEntry, browser, questionPatterns }) {
+      const { prompt, sourceDocument } = await constructPrompt({
+        drugName,
+        catalogEntry,
+        browser,
+        questionPatterns,
+        config
+      });
+      const qaPairs = await callAgenticExtractor({
+        config,
+        drugName,
+        prompt
+      });
+
+      return {
+        sourceDocument,
+        qaPairs: normalizeQaPairs(drugName, qaPairs)
+      };
     }
   };
 }

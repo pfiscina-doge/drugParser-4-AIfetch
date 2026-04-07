@@ -114,19 +114,34 @@ async function processDrug({
     newDocParseMethod: qaExtractionMethod
   });
 
-  const sourceDocument = await browser.loadCatalogEntry({
-    drugName,
-    catalogEntry
-  });
+  let sourceDocument;
+  let extractedQa;
 
-  const sourceText = normalizeSectionText(sourceDocument.text);
-  const extractedQa = await qaExtractor.extract({
-    drugName,
-    documentUrl: catalogEntry.url,
-    text: sourceText,
-    questionPatterns: config.questionPatterns,
-    attributionType: catalogEntry.attributionType
-  });
+  if (qaExtractor.name === "agentic" && typeof qaExtractor.extractCatalogEntry === "function") {
+    const agenticResult = await qaExtractor.extractCatalogEntry({
+      drugName,
+      catalogEntry,
+      browser,
+      questionPatterns: config.questionPatterns,
+      attributionType: catalogEntry.attributionType
+    });
+    sourceDocument = agenticResult.sourceDocument;
+    extractedQa = agenticResult.qaPairs;
+  } else {
+    sourceDocument = await browser.loadCatalogEntry({
+      drugName,
+      catalogEntry
+    });
+
+    const sourceText = normalizeSectionText(sourceDocument.text);
+    extractedQa = await qaExtractor.extract({
+      drugName,
+      documentUrl: catalogEntry.url,
+      text: sourceText,
+      questionPatterns: config.questionPatterns,
+      attributionType: catalogEntry.attributionType
+    });
+  }
   const localHtmlRecord = await findLocalHtmlRecord({
     drugName,
     aliases: config.aliases,
