@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { runPipeline } from "./pipeline.mjs";
 
-const DEFAULT_CATALOG_RESOURCE = "./examples/catalog.full.json";
+const DEFAULT_CATALOG_RESOURCE = "./config/catalog.full.json";
 
 function parseArgs(argv) {
   const args = {

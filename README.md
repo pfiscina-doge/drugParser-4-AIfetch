@@ -127,7 +127,7 @@ Files in `examples/chantix`:
 
 ## Key files
 
-- `examples/catalog.full.json`: shared full catalog resource
+- `config/catalog.full.json`: shared full catalog resource
 - `config/aliases.json`: name-to-alias mapping for TrumpRX lookup
 - `config/question-patterns.json`: known question prefixes and matching rules
 - `config/runtime.json`: runtime endpoints such as the TrumpRX base URL

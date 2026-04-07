@@ -162,14 +162,14 @@ async function processDrug({
       },
       trumpRx: {
         found: false,
-        status: "new drug- not found on trumpRX",
-        url: null,
+        status: trumpRxMatch.status || "new drug- not found on trumpRX",
+        url: trumpRxMatch.url,
         medGuideUrl: null,
         medGuideMatchesCatalogUrl: false,
         retrievalSteps: trumpRxMatch.retrievalSteps,
         qaPairs: []
       },
-      status: "new drug- not found on trumpRX",
+      status: trumpRxMatch.status || "new drug- not found on trumpRX",
       setSimilarityScore: 0,
       diff: []
     };

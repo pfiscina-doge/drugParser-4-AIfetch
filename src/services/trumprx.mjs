@@ -20,8 +20,13 @@ function stripHtmlTags(text) {
 }
 
 function toAbsoluteUrl(href, baseUrl) {
+  const trimmedHref = String(href || "").trim();
+  if (!trimmedHref) {
+    return "";
+  }
+
   try {
-    return new URL(String(href || "").trim(), baseUrl).href;
+    return new URL(trimmedHref, baseUrl).href;
   } catch {
     return "";
   }
@@ -68,6 +73,37 @@ function extractPatientInfoPdfUrlFromHtml(html, baseUrl) {
   return bestPatientInfo || bestMedicationGuide || anyPdf || "";
 }
 
+function isTrumpRxNotFoundError(error) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return /\b404\b/.test(message);
+}
+
+async function getTrumpRxHttpStatus(url) {
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "user-agent": "agentic-drug-label-load-diff/0.1"
+      }
+    });
+    return response.status;
+  } catch {
+    return null;
+  }
+}
+
+function isTrumpRxSoftNotFoundPage(page) {
+  const text = String(page?.text || "");
+  const rawText = String(page?.rawText || "");
+  const normalizedText = text.replace(/s+/g, " ").trim();
+
+  if (/__next_error__|global-error|content="noindex"/i.test(rawText)) {
+    return true;
+  }
+
+  return normalizedText === "TrumpRx" || normalizedText === "Trump Rx";
+}
+
 async function findTrumpRxPatientInfoPdfUrl({ browser, trumpRxUrl, page }) {
   if (browser.name === "agent-browser") {
     try {
@@ -99,12 +135,39 @@ export async function findTrumpRxProduct({ drugName, aliases, browser, trumpRxBa
   const candidates = [drugName, ...(aliases[drugName] || [])]
     .map(slugify)
     .filter(Boolean);
+  let sawNotFound = false;
+  let lastNotFoundUrl = null;
 
   for (const candidate of candidates) {
     const url = `${trumpRxBaseUrl}/${candidate}`;
+    const httpStatus = await getTrumpRxHttpStatus(url);
+    if (httpStatus === 404) {
+      sawNotFound = true;
+      lastNotFoundUrl = url;
+      continue;
+    }
 
     try {
       const page = await browser.loadWebPageText(url);
+      if (browser.name === "agent-browser") {
+        try {
+          const extracted = await findTrumpRxPdfLinkWithAgentBrowser({ trumpRxUrl: url });
+          if (!toAbsoluteUrl(extracted?.pdfLink || "", url) && String(extracted?.title || "").trim() === "TrumpRx") {
+            sawNotFound = true;
+            lastNotFoundUrl = url;
+            continue;
+          }
+        } catch {
+          // Fall back to page-shape detection below.
+        }
+      }
+
+      if (isTrumpRxSoftNotFoundPage(page)) {
+        sawNotFound = true;
+        lastNotFoundUrl = url;
+        continue;
+      }
+
       if (page.text && page.text.trim()) {
         const medGuideUrl = await findTrumpRxPatientInfoPdfUrl({
           browser,
@@ -136,13 +199,44 @@ export async function findTrumpRxProduct({ drugName, aliases, browser, trumpRxBa
           ]
         };
       }
-    } catch {
+    } catch (error) {
+      if (isTrumpRxNotFoundError(error)) {
+        sawNotFound = true;
+        lastNotFoundUrl = url;
+        continue;
+      }
+
       continue;
     }
   }
 
+  if (sawNotFound) {
+    return {
+      found: false,
+      status: "Drug not found on trump RX",
+      url: lastNotFoundUrl,
+      aliasUsed: null,
+      medGuideUrl: null,
+      retrievalSteps: [
+        {
+          step: "construct-url",
+          status: "success",
+          detail: lastNotFoundUrl || "No TrumpRX URL constructed."
+        },
+        {
+          step: "fetch-page",
+          status: "not_found",
+          detail: lastNotFoundUrl
+            ? `TrumpRX returned 404 for ${lastNotFoundUrl}.`
+            : "TrumpRX returned 404 for the attempted product URL."
+        }
+      ]
+    };
+  }
+
   return {
     found: false,
+    status: "new drug- not found on trumpRX",
     url: null,
     aliasUsed: null,
     medGuideUrl: null,
