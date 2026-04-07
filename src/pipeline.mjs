@@ -193,6 +193,7 @@ async function processDrug({
   const productionQa = await loadTrumpRxQa({
     drugName,
     trumpRxUrl: trumpRxMatch.url,
+    medGuideUrl: trumpRxMatch.medGuideUrl,
     browser,
     qaExtractor,
     questionPatterns: config.questionPatterns

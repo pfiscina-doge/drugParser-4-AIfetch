@@ -78,20 +78,6 @@ function isTrumpRxNotFoundError(error) {
   return /\b404\b/.test(message);
 }
 
-async function getTrumpRxHttpStatus(url) {
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "user-agent": "agentic-drug-label-load-diff/0.1"
-      }
-    });
-    return response.status;
-  } catch {
-    return null;
-  }
-}
-
 function isTrumpRxSoftNotFoundPage(page) {
   const text = String(page?.text || "");
   const rawText = String(page?.rawText || "");
@@ -140,14 +126,39 @@ export async function findTrumpRxProduct({ drugName, aliases, browser, trumpRxBa
 
   for (const candidate of candidates) {
     const url = `${trumpRxBaseUrl}/${candidate}`;
-    const httpStatus = await getTrumpRxHttpStatus(url);
-    if (httpStatus === 404) {
-      sawNotFound = true;
-      lastNotFoundUrl = url;
-      continue;
-    }
-
     try {
+      try {
+        const extracted = await findTrumpRxPdfLinkWithAgentBrowser({ trumpRxUrl: url });
+        const directAgentBrowserPdfUrl = toAbsoluteUrl(extracted?.pdfLink || "", url);
+        if (directAgentBrowserPdfUrl) {
+          return {
+            found: true,
+            url,
+            aliasUsed: candidate,
+            medGuideUrl: directAgentBrowserPdfUrl,
+            retrievalSteps: [
+              {
+                step: "construct-url",
+                status: "success",
+                detail: url
+              },
+              {
+                step: "fetch-page",
+                status: "success",
+                detail: "agent-browser located the TrumpRX product page."
+              },
+              {
+                step: "find-patient-information-pdf",
+                status: "success",
+                detail: directAgentBrowserPdfUrl
+              }
+            ]
+          };
+        }
+      } catch {
+        // Fall back to the configured browser path below.
+      }
+
       const page = await browser.loadWebPageText(url);
       if (browser.name === "agent-browser") {
         try {
@@ -201,6 +212,40 @@ export async function findTrumpRxProduct({ drugName, aliases, browser, trumpRxBa
       }
     } catch (error) {
       if (isTrumpRxNotFoundError(error)) {
+        try {
+          const extracted = await findTrumpRxPdfLinkWithAgentBrowser({ trumpRxUrl: url });
+          const fallbackMedGuideUrl = toAbsoluteUrl(extracted?.pdfLink || "", url);
+          if (fallbackMedGuideUrl) {
+            return {
+              found: true,
+              url,
+              aliasUsed: candidate,
+              medGuideUrl: fallbackMedGuideUrl,
+              retrievalSteps: [
+                {
+                  step: "construct-url",
+                  status: "success",
+                  detail: url
+                },
+                {
+                  step: "fetch-page",
+                  status: "warning",
+                  detail: "Direct TrumpRX fetch returned 404; agent-browser fallback located the product page."
+                },
+                {
+                  step: "find-patient-information-pdf",
+                  status: "success",
+                  detail: fallbackMedGuideUrl
+                }
+              ]
+            };
+          }
+        } catch {
+          sawNotFound = true;
+          lastNotFoundUrl = url;
+          continue;
+        }
+
         sawNotFound = true;
         lastNotFoundUrl = url;
         continue;
@@ -253,16 +298,19 @@ export async function findTrumpRxProduct({ drugName, aliases, browser, trumpRxBa
 export async function loadTrumpRxQa({
   drugName,
   trumpRxUrl,
+  medGuideUrl,
   browser,
   qaExtractor,
   questionPatterns
 }) {
-  const page = await browser.loadWebPageText(trumpRxUrl);
-  const patientInfoPdfUrl = await findTrumpRxPatientInfoPdfUrl({
-    browser,
-    trumpRxUrl,
-    page
-  });
+  const patientInfoPdfUrl = medGuideUrl || await (async () => {
+    const page = await browser.loadWebPageText(trumpRxUrl);
+    return findTrumpRxPatientInfoPdfUrl({
+      browser,
+      trumpRxUrl,
+      page
+    });
+  })();
 
   if (!patientInfoPdfUrl) {
     return [];
