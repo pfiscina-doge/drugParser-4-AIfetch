@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-04-07T20:04:33.579Z",
+  "configUsed": {
+    "newDocParseMethod": "auto",
+    "diffEngine": "heuristic",
+    "docQaExtractor": "ai",
+    "trumpRxBaseUrl": "https://trumprx.gov/p"
+  },
+  "result": {
+    "drugName": "chantix",
+    "catalogEntry": {
+      "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=557",
+      "contentType": "html",
+      "attributionType": "patient-info"
+    },
+    "qaExtractionMethod": "agent-browser",
+    "localSourceFile": null,
+    "sourceExtraction": {
+      "sourceUrl": "https://labeling.pfizer.com/ShowLabeling.aspx?id=557",
+      "headingDetected": null,
+      "qaPairs": []
+    },
+    "trumpRx": {
+      "found": false,
+      "status": "processing error",
+      "url": null,
+      "medGuideUrl": null,
+      "medGuideMatchesCatalogUrl": false,
+      "retrievalSteps": [
+        {
+          "step": "processing",
+          "status": "error",
+          "detail": "Unexpected token '`', \"```json\n{\n\"... is not valid JSON"
+        }
+      ],
+      "qaPairs": []
+    },
+    "status": "processing error",
+    "setSimilarityScore": 0,
+    "diff": []
+  }
+}

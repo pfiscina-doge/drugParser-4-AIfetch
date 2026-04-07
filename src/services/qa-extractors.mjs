@@ -3,61 +3,66 @@ import path from "node:path";
 import { askPerplexity } from "./perplexity-client.mjs";
 import { extractQaPairs as extractQaPairsRuleBased, normalizeSectionText } from "./question-extractor.mjs";
 
-function buildExtractionPrompt({ drugName, documentUrl, text, questionPatterns }) {
-  const knownStarts = (questionPatterns?.knownQuestionStarts || []).join("; ");
-  const questionRegexes = (questionPatterns?.questionRegexes || []).join("; ");
+function sectionInstruction(attributionType) {
+  if (attributionType === "medguide" || attributionType === "medlabel") {
+    return "Look for the section called Medication Guide or Medical Guide. Under that section, find the patient-facing questions for this drug.";
+  }
 
+  return "Look for the section called PATIENT INFORMATION or Patient Information. Under that section, find the patient-facing questions for this drug.";
+}
+
+function buildExtractionPrompt({ drugName, documentUrl, text, attributionType }) {
   return [
     "You extract patient-facing question and answer pairs from sourced drug-label text.",
     "Return only valid JSON.",
     "Output shape:",
     '{"qaPairs":[{"question":"...","answer":"..."}]}',
     "Task:",
-    "- Given this text and the known question patterns, find every question in the Medication Guide or Patient Information section that matches the known patterns.",
-    "- For each matched question, output the question text and the answer text directly as they appear in the document text.",
-    "- There may be multiple matching questions; extract all of them.",
+    sectionInstruction(attributionType),
+    "The questions will appear as headings, often in bold or in a different font than the answer text.",
+    "Parse the questions and the answer text that follows each question.",
     "Rules:",
     "- Use only text that appears in the document text below.",
-    "- Copy questions and answers exactly as written in the text.",
-    "- Do not paraphrase the question or answer.",
+    "- Copy the answer text exactly as it appears in the document.",
+    "- Preserve formatting in the answer text, including paragraph breaks, bullets, numbering, and line breaks whenever they appear in the sourced text.",
+    "- Do not paraphrase the question or the answer.",
     "- Do not summarize.",
     "- Do not invent missing text.",
-    "- Bullets under a question belong to that question's answer and do not start a new question.",
-    "- Continuation lines that belong to the current answer must remain in that answer.",
-    "- Only start a new item when the document clearly presents a new top-level question or heading.",
-    "- If no matching section or questions exist, return {\"qaPairs\":[]}.",
+    "- Questions may include the drug name and may or may not end with a '?'. Preserve the question text exactly as shown.",
+    "- Treat the answer as the text that belongs to that question until the next clearly distinct question heading in the same section.",
+    "- Only extract questions from the target section for the attribution type above.",
+    "- If the target section or its questions are not present, return {\"qaPairs\":[]}.",
     `Drug name: ${drugName}`,
     `Document URL: ${documentUrl || ""}`,
-    `Known question starts: ${knownStarts}`,
-    `Known question regexes: ${questionRegexes}`,
+    `Attribution type: ${attributionType || ""}`,
     "Sourced document text follows:",
     text
   ].join("\n");
 }
 
-function buildAgenticPrompt({ drugName, documentUrl, text, questionPatterns, onlyFromCatalogURL }) {
-  const knownQuestions = questionPatterns?.knownQuestionStarts || [];
-
+function buildAgenticPrompt({ drugName, documentUrl, text, attributionType, onlyFromCatalogURL }) {
   return [
-    "Using this list of known questions:",
-    JSON.stringify(knownQuestions, null, 2),
-    `for the ${drugName}`,
-    `read the document content gathered from: ${documentUrl || ""}`,
-    "produce a json that contains the text of the questions in this format:",
+    `For the drug ${drugName}, read the document content gathered from: ${documentUrl || ""}`,
+    "Produce JSON in this format:",
     '{"qaPairs":[{"id":"DRUG_SLUG-1","question":"...","answer":"..."}]}',
+    "Task:",
+    sectionInstruction(attributionType),
+    "In that section, identify each patient-facing question heading and the answer text that belongs to it.",
+    "The questions are typically visually distinct from the answers, such as bolded or shown in a different font.",
     "Rules:",
     "- Return valid JSON only.",
-    "- Use the exact drug slug and source URL provided above.",
     "- Use only the document text below; do not rely on prior knowledge.",
     ...(onlyFromCatalogURL
       ? ["- Only use the content parsed from the source URL above.", "- Do not follow links or use content from any other URLs."]
       : []),
-    "- Questions should end in a '?'.",
-    "- The answer text should be the text following that question up to the next question.",
-    "- Preserve bullet points in the answer text.",
-    "- Preserve the wording from the document whenever possible.",
+    "- Preserve the exact question text from the document.",
+    "- Preserve the exact answer text from the document.",
+    "- Preserve formatting in the answer text, including bullets, numbering, and line breaks whenever they appear in the sourced text.",
+    "- Treat the answer as the text following that question up to the next clearly distinct question heading in the same section.",
+    "- Only extract questions from the target section for the attribution type above.",
     "- If there are no matching questions, return {\"qaPairs\":[]}.",
     "- Use ids in the output if you want, but they will be normalized by the caller.",
+    `Attribution type: ${attributionType || ""}`,
     "Document text:",
     text
   ].join("\n");
@@ -73,7 +78,7 @@ async function constructPrompt({ drugName, catalogEntry, browser, questionPatter
     drugName,
     documentUrl: catalogEntry?.url,
     text: sourceText,
-    questionPatterns,
+    attributionType: catalogEntry?.attributionType,
     onlyFromCatalogURL: config.onlyFromCatalogURL
   });
 
@@ -131,48 +136,58 @@ async function callLlmExtractor({ config, prompt }) {
     );
   }
 
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      response_format: {
-        type: "json_object"
+  const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+  try {
+    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${apiKey}`
       },
-      messages: [
-        {
-          role: "system",
-          content: "Extract medication-guide or patient-information question and answer pairs from supplied text and return strict JSON."
-        },
-        {
-          role: "user",
-          content: `${prompt}\n\nReturn only this wrapper object shape: {\"qaPairs\":[{\"question\":\"...\",\"answer\":\"...\"}]}`
-        }
-      ]
-    })
-  });
+      body: JSON.stringify({
+        model,
+        temperature: 0,
+        messages: [
+          {
+            role: "system",
+            content: "Extract medication-guide or patient-information question and answer pairs from supplied text and return strict JSON."
+          },
+          {
+            role: "user",
+            content: `${prompt}
 
-  if (!response.ok) {
-    throw new Error(`AI extraction request failed: ${response.status} ${await response.text()}`);
+Return only this wrapper object shape: {"qaPairs":[{"question":"...","answer":"..."}]}`
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI extraction request failed: ${response.status} ${await response.text()}`);
+    }
+
+    const payload = await response.json();
+    const content = payload?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      throw new Error("AI extraction response did not include message content.");
+    }
+
+    const parsed = JSON.parse(content);
+    if (!Array.isArray(parsed.qaPairs)) {
+      throw new Error("AI extraction response did not include a qaPairs array.");
+    }
+
+    return parsed.qaPairs;
+  } finally {
+    if (previousTlsSetting === undefined) {
+      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    } else {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting;
+    }
   }
-
-  const payload = await response.json();
-  const content = payload?.choices?.[0]?.message?.content;
-
-  if (!content) {
-    throw new Error("AI extraction response did not include message content.");
-  }
-
-  const parsed = JSON.parse(content);
-  if (!Array.isArray(parsed.qaPairs)) {
-    throw new Error("AI extraction response did not include a qaPairs array.");
-  }
-
-  return parsed.qaPairs;
 }
 
 async function callAgenticExtractor({ config, drugName, prompt }) {
@@ -252,8 +267,8 @@ function createRuleBasedExtractor() {
 function createAiExtractor(config) {
   return {
     name: "ai",
-    async extract({ drugName, documentUrl, text, questionPatterns }) {
-      const prompt = buildExtractionPrompt({ drugName, documentUrl, text, questionPatterns });
+    async extract({ drugName, documentUrl, text, attributionType }) {
+      const prompt = buildExtractionPrompt({ drugName, documentUrl, text, attributionType });
       const qaPairs = await callLlmExtractor({ config, prompt });
       return normalizeQaPairs(drugName, qaPairs);
     }
@@ -264,12 +279,12 @@ function createAgenticExtractor(config) {
   return {
     name: "agentic",
     constructPrompt,
-    async extract({ drugName, documentUrl, text, questionPatterns }) {
+    async extract({ drugName, documentUrl, text, attributionType }) {
       const prompt = buildAgenticPrompt({
         drugName,
         documentUrl,
         text: normalizeSectionText(text),
-        questionPatterns,
+        attributionType,
         onlyFromCatalogURL: config.onlyFromCatalogURL
       });
       const qaPairs = await callAgenticExtractor({

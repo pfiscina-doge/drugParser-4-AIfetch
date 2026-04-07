@@ -75,6 +75,32 @@ TrumpRX now follows the same document-parsing methodology as the source catalog 
 npm start --   --drugs duavee,zepbound   --output ./output/results.json
 ```
 
+## Mayzent example
+
+Standalone MAYZENT example files:
+
+- source Q&A file: `/Users/fcl5/Documents/drugLabel-Parser-4/output/intermediate/mayzent.source-qa.json`
+- TrumpRX Q&A file: `/Users/fcl5/Documents/drugLabel-Parser-4/output/intermediate/mayzent.trumprx-qa.json`
+- final MAYZENT output file: `/Users/fcl5/Documents/drugLabel-Parser-4/output/mayzent-ai-example.json`
+- final MAYZENT diff against TrumpRX: `/Users/fcl5/Documents/drugLabel-Parser-4/output/mayzent-ai-diff.json`
+
+The current MAYZENT example reflects:
+
+- `status`: `both questionsfound`
+- `sourceQaCount`: `8`
+- `trumpQaCount`: `8`
+- `trumpUrl`: `https://trumprx.gov/p/mayzent`
+- `medGuideMatchesCatalogUrl`: `true`
+
+## Chantix example
+
+Standalone CHANTIX example files:
+
+- source Q&A file: `/Users/fcl5/Documents/drugLabel-Parser-4/output/intermediate/chantix.source-qa.json`
+- final CHANTIX output file: `/Users/fcl5/Documents/drugLabel-Parser-4/output/chantix-ai-example.json`
+
+The current CHANTIX example is useful as a source-extraction example. Its TrumpRX path is still failing JSON cleanup, so it should be treated as a debugging/reference case rather than a successful final diff example.
+
 
 Update `config/question-patterns.json` from discovered questions in a saved run output:
 
