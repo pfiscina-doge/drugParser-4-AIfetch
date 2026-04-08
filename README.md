@@ -12,6 +12,7 @@ This project ingests a shared full drug catalog resource and can run either the 
 - TrumpRX parsing can use either the linked PDF path or an `agent-browser` accordion-expansion path.
 - The default TrumpRX parse mode is `agent-browser`.
 - A `perplexity` engine stub is included as a configurable placeholder for future browser/LLM automation.
+- Some `agentic` responses can come back too long and get truncated, which may leave incomplete JSON in the debug artifact or cause a processing error on that run.
 
 ## Run
 
