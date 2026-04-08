@@ -1,12 +1,21 @@
 {
-  "generatedAt": "2026-04-08T16:53:00.968Z",
-  "command": "node src/cli.mjs --all-drugs --doc-qa-extractor agentic --skip-trumprx --save-intermediate --output ./examples/full-catalog-agentic/full-catalog-agentic.output.json",
-  "totalDrugs": 81,
+  "generatedAt": "2026-04-08T17:31:20.332Z",
+  "command": "node src/cli.mjs --catalog ./examples/full-catalog-agentic/catalog.excluding-unfinished.json --doc-qa-extractor agentic --skip-trumprx --save-intermediate --output ./examples/full-catalog-agentic/full-catalog-agentic.output.json",
+  "totalDrugs": 76,
   "summary": {
-    "parsed": 76,
-    "missing": 5
+    "parsed": 76
   },
   "rows": [
+    {
+      "drugName": "cytomel",
+      "questionCount": 24,
+      "status": "parsed"
+    },
+    {
+      "drugName": "estring",
+      "questionCount": 20,
+      "status": "parsed"
+    },
     {
       "drugName": "xeljanz",
       "questionCount": 11,
@@ -14,6 +23,11 @@
     },
     {
       "drugName": "avapro",
+      "questionCount": 10,
+      "status": "parsed"
+    },
+    {
+      "drugName": "diflucan",
       "questionCount": 10,
       "status": "parsed"
     },
@@ -29,11 +43,6 @@
     },
     {
       "drugName": "chantix",
-      "questionCount": 9,
-      "status": "parsed"
-    },
-    {
-      "drugName": "diflucan",
       "questionCount": 9,
       "status": "parsed"
     },
@@ -163,6 +172,11 @@
       "status": "parsed"
     },
     {
+      "drugName": "advair-diskus",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
       "drugName": "airsupra",
       "questionCount": 7,
       "status": "parsed"
@@ -218,11 +232,6 @@
       "status": "parsed"
     },
     {
-      "drugName": "estring",
-      "questionCount": 6,
-      "status": "parsed"
-    },
-    {
       "drugName": "insulin-glargine",
       "questionCount": 6,
       "status": "parsed"
@@ -239,11 +248,6 @@
     },
     {
       "drugName": "azulfidine",
-      "questionCount": 5,
-      "status": "parsed"
-    },
-    {
-      "drugName": "cytomel",
       "questionCount": 5,
       "status": "parsed"
     },
@@ -318,11 +322,6 @@
       "status": "parsed"
     },
     {
-      "drugName": "advair-diskus",
-      "questionCount": 0,
-      "status": "parsed"
-    },
-    {
       "drugName": "advair-hfa",
       "questionCount": 0,
       "status": "parsed"
@@ -338,11 +337,6 @@
       "status": "parsed"
     },
     {
-      "drugName": "cetrotide",
-      "questionCount": 0,
-      "status": "missing"
-    },
-    {
       "drugName": "combigan",
       "questionCount": 0,
       "status": "parsed"
@@ -351,11 +345,6 @@
       "drugName": "genotropin",
       "questionCount": 0,
       "status": "parsed"
-    },
-    {
-      "drugName": "gonal-f",
-      "questionCount": 0,
-      "status": "missing"
     },
     {
       "drugName": "humira-pen",
@@ -368,19 +357,9 @@
       "status": "parsed"
     },
     {
-      "drugName": "jentadueto",
-      "questionCount": 0,
-      "status": "missing"
-    },
-    {
       "drugName": "jentadueto-xr",
       "questionCount": 0,
       "status": "parsed"
-    },
-    {
-      "drugName": "ovidrel",
-      "questionCount": 0,
-      "status": "missing"
     },
     {
       "drugName": "primaquine-phosphate",
@@ -398,11 +377,6 @@
       "status": "parsed"
     },
     {
-      "drugName": "wegovy",
-      "questionCount": 0,
-      "status": "missing"
-    },
-    {
       "drugName": "wegovy-pill",
       "questionCount": 0,
       "status": "parsed"
@@ -413,7 +387,7 @@
       "status": "parsed"
     }
   ],
-  "unfinishedDrugs": [
+  "excludedUnfinishedDrugs": [
     "cetrotide",
     "gonal-f",
     "jentadueto",

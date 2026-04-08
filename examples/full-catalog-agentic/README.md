@@ -5,22 +5,23 @@ This folder contains a source-only `agentic` catalog run snapshot with TrumpRX p
 ## Command
 
 ```bash
-node src/cli.mjs --all-drugs --doc-qa-extractor agentic --skip-trumprx --save-intermediate --output ./examples/full-catalog-agentic/full-catalog-agentic.output.json
+node src/cli.mjs --catalog ./examples/full-catalog-agentic/catalog.excluding-unfinished.json --doc-qa-extractor agentic --skip-trumprx --save-intermediate --output ./examples/full-catalog-agentic/full-catalog-agentic.output.json
 ```
 
 ## Outputs
 
-- `full-catalog-agentic.output.json`: snapshot of per-drug question counts assembled from the latest completed source QA outputs
-- `drug-question-counts.csv`: CSV list of drug names and question counts
+- `catalog.excluding-unfinished.json`: filtered catalog used for this example run
+- `full-catalog-agentic.output.json`: snapshot of per-drug question counts assembled from the latest completed source QA outputs for the filtered catalog
+- `drug-question-counts.csv`: CSV list of drug names and question counts for the filtered catalog
 
 ## Summary
 
-- Total drugs: 81
+- Total drugs in filtered catalog: 76
 - Parsed: 76
-- Missing: 5
+- Missing: 0
 - Invalid JSON: 0
 
-## Unfinished Drugs
+## Excluded Unfinished Drugs
 
 - cetrotide
 - gonal-f
@@ -28,4 +29,4 @@ node src/cli.mjs --all-drugs --doc-qa-extractor agentic --skip-trumprx --save-in
 - ovidrel
 - wegovy
 
-The long-running aggregate CLI output did not flush a final JSON file in this session, so this package was assembled from the completed per-drug source QA files under `output/intermediate/` after running the command above.
+This package was regenerated from the current per-drug source QA files under `output/intermediate/` using the filtered catalog above.

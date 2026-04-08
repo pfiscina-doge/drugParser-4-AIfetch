@@ -1,0 +1,382 @@
+{
+  "abrilada": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=12780",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "chantix": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=557",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "cortef": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=594",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "cytomel": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=703",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "diflucan": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=575",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "duavee": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=1174",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "estring": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=19628",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "eucrisa": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=5331",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "genotropin": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=577",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "levoxyl": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=688",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "lopid": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=636",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "medrol": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=601",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "ngenla": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=19642",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "nicotrol": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=674",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "premarin": {
+    "url": "https://labeling.pfizer.com/showlabeling.aspx?id=131",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "premarin-vc": {
+    "url": "https://labeling.pfizer.com/showlabeling.aspx?id=132",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "prempro": {
+    "url": "https://labeling.pfizer.com/showlabeling.aspx?id=133",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "pristiq": {
+    "url": "https://labeling.pfizer.com/showlabeling.aspx?id=497",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "protonix": {
+    "url": "https://labeling.pfizer.com/showlabeling.aspx?id=135",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "tikosyn": {
+    "url": "https://labeling.pfizer.com/showlabeling.aspx?id=639",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "toviaz": {
+    "url": "https://labeling.pfizer.com/showlabeling.aspx?id=540",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "vfend": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=618",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "viracept": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=528",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "xeljanz": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=959",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "zarontin": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=609",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "zavzpret": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=19471",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "zyvox": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=649",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "azulfidine": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=524",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "azulfidine-en-tabs": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=527",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "cleocin": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=627",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "colestid": {
+    "url": "https://labeling.pfizer.com/ShowLabeling.aspx?id=593",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "ozempic": {
+    "url": "https://www.novo-pi.com/ozempic.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "wegovy-pill": {
+    "url": "https://www.novo-pi.com/wegovy.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "admelog": {
+    "url": "https://products.sanofi.us/admelog/admelog.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "lantus": {
+    "url": "https://products.sanofi.us/lantus/lantus.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "apidra": {
+    "url": "https://products.sanofi.us/apidra/apidra.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "toujeo": {
+    "url": "https://products.sanofi.us/toujeo/toujeo.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "insulin-glargine": {
+    "url": "https://products.sanofi.us/insulin-glargine/insulin-glargine_winthrop-300.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "merilog": {
+    "url": "https://products.sanofi.us/merilog/merilog.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "priftin": {
+    "url": "https://products.sanofi.us/priftin/Priftin.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "primaquine-phosphate": {
+    "url": "https://products.sanofi.us/primaquine/primaquine.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "lovenox": {
+    "url": "https://products.sanofi.us/lovenox/lovenox.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "plavix": {
+    "url": "https://products.sanofi.us/plavix/plavix.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "avapro": {
+    "url": "https://products.sanofi.us/avapro/avapro.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "invokana": {
+    "url": "https://www.jnjlabels.com/package-insert/product-patient-information/INVOKANA-medication-guide.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "invokamet": {
+    "url": "https://www.jnjlabels.com/package-insert/product-patient-information/INVOKAMET-medication-guide.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "invokamet-xr": {
+    "url": "https://www.jnjlabels.com/package-insert/product-patient-information/INVOKAMET+XR-medication-guide.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "xarelto": {
+    "url": "https://www.jnjlabels.com/package-insert/product-patient-information/XARELTO-medication-guide.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "zepbound": {
+    "url": "https://pi.lilly.com/us/zepbound-us-mg.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "zepbound-kwikpen": {
+    "url": "https://pi.lilly.com/us/zepbound-us-mg.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "insulin-lispro": {
+    "url": "https://uspl.lilly.com/lispro/lispro.html#ppi",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "repatha": {
+    "url": "https://www.pi.amgen.com/united_states/repatha/repatha_ppi_pt_english.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "aimovig": {
+    "url": "https://www.pi.amgen.com/united_states/aimovig/Aimovig_ppi_pt_english.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "amjevita": {
+    "url": "https://www.pi.amgen.com/-/media/Project/Amgen/Repository/pi-amgen-com/Amjevita/amjevita_pi_hcp_english.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "airsupra": {
+    "url": "https://www.azpicentral.com/pi.html?product=airsupra",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  },
+  "bevespi": {
+    "url": "https://www.azpicentral.com/pi.html?product=bevespi",
+    "contentType": "html",
+    "attributionType": "medguide"
+  },
+  "xigduo": {
+    "url": "https://www.azpicentral.com/pi.html?product=xigduoxr",
+    "contentType": "html",
+    "attributionType": "medguide"
+  },
+  "farxiga": {
+    "url": "https://drd9vrdh9yh09.cloudfront.net/50fd68b9-106b-4550-b5d0-12b045f8b184/0be9cb1b-3b33-41c7-bfc2-04c9f718e442/0be9cb1b-3b33-41c7-bfc2-04c9f718e442_viewable_rendition__v.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "mayzent": {
+    "url": "https://www.novartis.com/us-en/sites/novartis_us/files/mayzent_pmg_0.pdf",
+    "contentType": "pdf",
+    "attributionType": "medguide"
+  },
+  "rydapt": {
+    "url": "https://www.novartis.com/us-en/sites/novartis_us/files/rydapt.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "tabrecta": {
+    "url": "https://www.novartis.com/us-en/sites/novartis_us/files/tabrecta.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "alphagan": {
+    "url": "https://www.rxabbvie.com/pdf/alphagan_pi.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "combigan": {
+    "url": "https://www.rxabbvie.com/pdf/combigan_pi.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "humira-pen": {
+    "url": "https://www.rxabbvie.com/pdf/humira.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "humira-syringe": {
+    "url": "https://www.rxabbvie.com/pdf/humira.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "synthroid": {
+    "url": "https://www.rxabbvie.com/pdf/synthroid.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "advair-diskus": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Advair_Diskus/pdf/ADVAIR-DISKUS-PI-PIL-IFU.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "advair-hfa": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Advair_HFA/pdf/ADVAIR-HFA-PI-PIL-IFU.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "anoro-ellipta": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Anoro_Ellipta/pdf/ANORO-ELLIPTA-PI-PIL-IFU.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "arnuity-ellipta": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Arnuity_Ellipta/pdf/ARNUITY-ELLIPTA-PI-PIL-IFU.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "incruse-ellipta": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Incruse_Ellipta/pdf/INCRUSE-ELLIPTA-PI-PIL-IFU.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "ventolin-hfa": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Ventolin_HFA/pdf/VENTOLIN-HFA-PI-PIL-IFU.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "malarone": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Malarone/pdf/MALARONE.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "relenza": {
+    "url": "https://gskpro.com/content/dam/global/hcpportal/en_US/Prescribing_Information/Relenza/pdf/RELENZA-PI-PIL-IFU.PDF",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "jentadueto-xr": {
+    "url": "https://content.boehringer-ingelheim.com/DAM/f8b1cb8b-5201-4311-b856-af1e011f4cbb/jentadueto%20xr-us-pi.pdf",
+    "contentType": "pdf",
+    "attributionType": "patient-info"
+  },
+  "striverdi-respimat": {
+    "url": "https://patient.boehringer-ingelheim.com/us/products/striverdi/bipdf/striverdi-respimat-us-pi",
+    "contentType": "html",
+    "attributionType": "patient-info"
+  }
+}
