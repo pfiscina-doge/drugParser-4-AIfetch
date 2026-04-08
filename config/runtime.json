@@ -1,5 +1,6 @@
 {
   "trumpRxBaseUrl": "https://trumprx.gov/p",
+  "docQaExtractor": "rule-based",
   "llm": {
     "baseUrl": "https://api.perplexity.ai",
     "model": "sonar",

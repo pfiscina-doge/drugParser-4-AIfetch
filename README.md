@@ -8,7 +8,7 @@ This project ingests a shared full drug catalog resource and can run either the 
 - A built-in `fetch` document parser is included for basic HTML/PDF download workflows.
 - A built-in `heuristic` diff engine is included so the pipeline runs end-to-end without an LLM.
 - A built-in `rule-based` document QA extractor is the default.
-- An `ai` document QA extractor can be enabled with Perplexity by default, while the endpoint and model remain configurable.
+- An `agentic` document QA extractor can be enabled with Perplexity by default, while the endpoint and model remain configurable. Old `ai` invocations are treated as a compatibility alias for `agentic`.
 - TrumpRX parsing can use either the linked PDF path or an `agent-browser` accordion-expansion path.
 - The default TrumpRX parse mode is `agent-browser`.
 - A `perplexity` engine stub is included as a configurable placeholder for future browser/LLM automation.
@@ -43,17 +43,16 @@ You can still override that choice explicitly with `--new-doc-parse-method <fetc
 Choose how document text is turned into question/answer pairs with `--doc-qa-extractor`:
 
 - `rule-based`: default, uses the local parser heuristics
-- `ai`: uses the configured LLM endpoint to extract question/answer pairs from already-loaded document text
-- `agentic`: asks the configured LLM to extract question/answer pairs from the already-loaded document text snapshot and return JSON
+- `agentic`: uses the configured LLM endpoint to extract question/answer pairs from the already-loaded document text snapshot and return JSON
 
 How these two switches apply:
 
 - `--doc-qa-extractor` controls question/answer extraction for both the source catalog document and the TrumpRX patient-information PDF
 
-Use AI extraction with the default Perplexity config. If `llm.apiKeyFile` is set in runtime config, the CLI will preload that key automatically:
+Use agentic extraction with the default Perplexity config. If `llm.apiKeyFile` is set in runtime config, the CLI will preload that key automatically:
 
 ```bash
-npm start --   --drugs duavee,zepbound   --output ./output/results.json   --doc-qa-extractor ai
+npm start --   --drugs duavee,zepbound   --output ./output/results.json   --doc-qa-extractor agentic
 ```
 
 Ask Perplexity a direct question and parse the response into JSON output:
@@ -160,7 +159,7 @@ Files in `examples/chantix`:
 - `--only-from-catalog-url`: when using `agentic`, tells the LLM to use only the parsed content from the source URL and not follow links
 - `--new-doc-parse-method <fetch|agent-browser>`: optional override for `chooseQAExtractionMethod`
 - `--diff-engine <heuristic|perplexity>`
-- `--doc-qa-extractor <rule-based|ai|agentic>`
+- `--doc-qa-extractor <rule-based|agentic>`: defaults to `rule-based`
 - `--llm-base-url <url>`
 - `--llm-api-key <key>`
 - `--llm-model <model>`
@@ -179,7 +178,7 @@ Files in `examples/chantix`:
 - `src/pipeline.mjs`: main orchestration
 - `src/perplexity-ask.mjs`: small CLI utility for direct Perplexity questions
 - `src/services/perplexity-client.mjs`: shared Perplexity API caller and response parser
-- `src/services/qa-extractors.mjs`: switchable rule-based and AI-backed document QA extraction
+- `src/services/qa-extractors.mjs`: switchable rule-based and agentic LLM-backed document QA extraction
 - `src/services/trumprx-agent-browser.mjs`: TrumpRX `agent-browser` helpers for locating the patient-information href on the product page
 
 ## Output shape
@@ -208,6 +207,7 @@ When a product is not found on TrumpRX, `status` is set to `new product`.
 ```json
 {
   "trumpRxBaseUrl": "https://trumprx.gov/p",
+  "docQaExtractor": "rule-based",
   "llm": {
     "baseUrl": "https://api.perplexity.ai",
     "model": "sonar",
@@ -217,7 +217,8 @@ When a product is not found on TrumpRX, `status` is set to `new product`.
 }
 ```
 
-- `llm.baseUrl`: Perplexity API base URL used when `--doc-qa-extractor ai`
+- `docQaExtractor`: default document QA extractor used by the CLI when `--doc-qa-extractor` is not passed
+- `llm.baseUrl`: Perplexity API base URL used when `--doc-qa-extractor agentic`
 - `llm.model`: Perplexity model name sent to the chat completions API
 - `llm.apiKeyEnvVar`: environment variable name to read the API key from, defaulting to `PERPLEXITY_API_KEY`
 - `llm.apiKeyFile`: optional local file path used by the CLI to preload the API key for document QA extraction

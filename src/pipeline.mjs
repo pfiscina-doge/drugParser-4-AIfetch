@@ -23,7 +23,6 @@ export async function runPipeline({ catalog, config }) {
   const diffEngine = createDiffEngine(config);
   const qaExtractor = createQaExtractor(config);
   const results = [];
-  const discoveredQuestionFormats = new Set();
 
   if (config.saveIntermediate) {
     await mkdir(config.intermediateDir, { recursive: true });
@@ -38,7 +37,6 @@ export async function runPipeline({ catalog, config }) {
           config,
           qaExtractor,
           diffEngine,
-          discoveredQuestionFormats
         }),
         120000,
         `Timed out processing ${drugName}`
@@ -86,9 +84,14 @@ export async function runPipeline({ catalog, config }) {
       newDocParseMethod: config.newDocParseMethod || "auto",
       diffEngine: config.diffEngine,
       docQaExtractor: config.docQaExtractor,
-      trumpRxBaseUrl: config.trumpRxBaseUrl
+      trumpRxBaseUrl: config.trumpRxBaseUrl,
+      skipTrumpRx: Boolean(config.skipTrumpRx)
     },
-    discoveredQuestionFormats: Array.from(discoveredQuestionFormats).sort(),
+    summaryCounts: results.map((result) => ({
+      drugName: result.drugName,
+      sourceQuestionCount: result.sourceQuestionCount || 0,
+      status: result.status
+    })),
     results
   };
 }
@@ -103,7 +106,6 @@ async function processDrug({
   config,
   qaExtractor,
   diffEngine,
-  discoveredQuestionFormats
 }) {
   const qaExtractionMethod = chooseQAExtractionMethod({
     catalogEntry,
@@ -148,13 +150,45 @@ async function processDrug({
     sourceHtmlDir: config.sourceHtmlDir
   });
 
-  for (const pair of extractedQa) {
-    discoveredQuestionFormats.add(pair.question);
-  }
 
   if (config.saveIntermediate) {
     const filePath = path.join(config.intermediateDir, `${drugName}.source-qa.json`);
     await writeFile(filePath, JSON.stringify(extractedQa, null, 2));
+  }
+
+  if (config.skipTrumpRx) {
+    return {
+      drugName,
+      catalogEntry,
+      qaExtractionMethod,
+      localSourceFile: localHtmlRecord,
+      sourceQuestionCount: extractedQa.length,
+      sourceQuestionCount: extractedQa.length,
+      sourceQuestionCount: extractedQa.length,
+      sourceExtraction: {
+        sourceUrl: catalogEntry.url,
+        headingDetected: sourceDocument.headingDetected,
+        qaPairs: extractedQa
+      },
+      trumpRx: {
+        found: false,
+        status: "skipped",
+        url: null,
+        medGuideUrl: null,
+        medGuideMatchesCatalogUrl: false,
+        retrievalSteps: [
+          {
+            step: "skip-trumprx",
+            status: "skipped",
+            detail: "TrumpRX lookup and diff were skipped for this source-only run."
+          }
+        ],
+        qaPairs: []
+      },
+      status: extractedQa.length > 0 ? "source questions found" : "no source questions found",
+      setSimilarityScore: 0,
+      diff: []
+    };
   }
 
   const trumpRxMatch = await findTrumpRxProduct({
@@ -223,6 +257,7 @@ async function processDrug({
     catalogEntry,
     qaExtractionMethod,
     localSourceFile: localHtmlRecord,
+    sourceQuestionCount: extractedQa.length,
     sourceExtraction: {
       sourceUrl: catalogEntry.url,
       headingDetected: sourceDocument.headingDetected,

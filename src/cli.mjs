@@ -14,9 +14,10 @@ function parseArgs(argv) {
     saveIntermediate: false,
     agenticDebug: false,
     onlyFromCatalogURL: false,
+    skipTrumpRx: false,
     newDocParseMethod: "",
     diffEngine: "heuristic",
-    docQaExtractor: "rule-based",
+    docQaExtractor: "",
     llmBaseUrl: "",
     llmApiKey: "",
     llmModel: "",
@@ -76,6 +77,8 @@ function parseArgs(argv) {
       args.agenticDebug = true;
     } else if (token === "--only-from-catalog-url") {
       args.onlyFromCatalogURL = true;
+    } else if (token === "--skip-trumprx") {
+      args.skipTrumpRx = true;
     }
   }
 
@@ -140,7 +143,7 @@ async function main() {
       questionPatterns: JSON.parse(questionPatternRaw),
       newDocParseMethod: args.newDocParseMethod,
       diffEngine: args.diffEngine,
-      docQaExtractor: args.docQaExtractor,
+      docQaExtractor: args.docQaExtractor || runtimeConfig.docQaExtractor || "rule-based",
       llmBaseUrl: args.llmBaseUrl || llmConfig.baseUrl || "",
       llmApiKey: args.llmApiKey || llmApiKeyFromFile,
       llmApiKeyEnvVar: llmConfig.apiKeyEnvVar || "PERPLEXITY_API_KEY",
@@ -148,6 +151,7 @@ async function main() {
       saveIntermediate: args.saveIntermediate,
       agenticDebug: args.agenticDebug,
       onlyFromCatalogURL: args.onlyFromCatalogURL,
+      skipTrumpRx: args.skipTrumpRx,
       intermediateDir,
       sourceHtmlDir: args.sourceHtmlDir ? path.resolve(rootDir, args.sourceHtmlDir) : "",
       trumpRxBaseUrl: args.trumpRxBaseUrl || runtimeConfig.trumpRxBaseUrl,
