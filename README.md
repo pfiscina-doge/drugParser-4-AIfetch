@@ -13,6 +13,7 @@ This project ingests a shared full drug catalog resource and can run either the 
 - The default TrumpRX parse mode is `agent-browser`.
 - A `perplexity` engine stub is included as a configurable placeholder for future browser/LLM automation.
 - Some `agentic` responses can come back too long and get truncated, which may leave incomplete JSON in the debug artifact or cause a processing error on that run.
+- The Perplexity-backed `agentic` path now segments extraction into heading and answer passes, uses `disable_search`, and requests JSON-schema output to reduce truncation risk.
 
 ## Run
 
@@ -179,7 +180,8 @@ Files in `examples/chantix`:
 - `src/pipeline.mjs`: main orchestration
 - `src/perplexity-ask.mjs`: small CLI utility for direct Perplexity questions
 - `src/services/perplexity-client.mjs`: shared Perplexity API caller and response parser
-- `src/services/qa-extractors.mjs`: switchable rule-based and agentic LLM-backed document QA extraction
+- `src/services/perplexity-agentic-extractor.mjs`: Perplexity-specific agentic extraction flow with segmented heading and answer passes
+- `src/services/qa-extractors.mjs`: switchable rule-based and agentic document QA extraction
 - `src/services/trumprx-agent-browser.mjs`: TrumpRX `agent-browser` helpers for locating the patient-information href on the product page
 
 ## Output shape

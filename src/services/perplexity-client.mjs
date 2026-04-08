@@ -128,7 +128,10 @@ export async function askPerplexity({
   baseUrl = "https://api.perplexity.ai",
   model = "sonar",
   systemPrompt = "Answer the user's question clearly and return JSON only when explicitly requested.",
-  temperature = 0
+  temperature = 0,
+  disableSearch = false,
+  responseFormat = null,
+  maxTokens = null
 }) {
   const resolvedApiKey = resolveApiKey({ apiKey });
   if (!resolvedApiKey) {
@@ -151,6 +154,9 @@ export async function askPerplexity({
       body: JSON.stringify({
         model,
         temperature,
+        disable_search: disableSearch,
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+        ...(maxTokens ? { max_tokens: maxTokens } : {}),
         messages: [
           {
             role: "system",
