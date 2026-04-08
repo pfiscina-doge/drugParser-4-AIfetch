@@ -45,7 +45,6 @@ function buildFallbackHeadingPrompt({ drugName, documentUrl, text, attributionTy
     "Use only the document content parsed from the Document URL below.",
     "Do not use outside knowledge, search results, or content from any other URLs.",
     ...(onlyFromCatalogURL ? ["- Do not follow links or use content from any other URLs."] : ["Do not follow links."]),
-    "Look for headings like Description, Descriptions, Contraindication, Contraindications, Contradiction, Contradictions, Warning, Warnings, Precautions, Storage, Dosage, Dosage and Administration, Highlights, or similar section headings.",
     "Also look for highlights and headings that begin a line with several dashes or m-dashes.",
     "Use those dashed or m-dash headings as the question text.",
     'For every returned heading, set "type" to "type-noguide-found".',
@@ -238,6 +237,22 @@ function uniqueHeadings(headings = []) {
   return deduped;
 }
 
+function trimAnswerAtNextHeading(answer, nextHeading) {
+  const text = String(answer || "");
+  const next = String(nextHeading || "").trim();
+
+  if (!text || !next) {
+    return text.trim();
+  }
+
+  const exactIndex = text.indexOf(next);
+  if (exactIndex > 0) {
+    return text.slice(0, exactIndex).trim();
+  }
+
+  return text.trim();
+}
+
 async function extractAnswersForHeadings({ config, drugName, documentUrl, text, attributionType, onlyFromCatalogURL, headings, labelPrefix }) {
   const qaPairs = [];
 
@@ -264,7 +279,7 @@ async function extractAnswersForHeadings({ config, drugName, documentUrl, text, 
 
     qaPairs.push({
       question: item.question,
-      answer: String(parsed?.answer || ""),
+      answer: trimAnswerAtNextHeading(String(parsed?.answer || ""), headings[index + 1]?.question),
       ...(item.type ? { type: item.type } : {})
     });
   }
@@ -292,6 +307,7 @@ async function extractAgenticQaPairs({ config, drugName, documentUrl, text, attr
   });
   const primaryHeadings = uniqueHeadings(primaryHeadingsJson?.headings || []);
 
+  let primaryQaPairs = [];
   if (primaryHeadings.length > 0) {
     const qaPairs = await extractAnswersForHeadings({
       config,
@@ -303,7 +319,10 @@ async function extractAgenticQaPairs({ config, drugName, documentUrl, text, attr
       headings: primaryHeadings,
       labelPrefix: "primary"
     });
-    return normalizeQaPairs(drugName, qaPairs);
+    primaryQaPairs = normalizeQaPairs(drugName, qaPairs);
+    if (primaryQaPairs.length > 1) {
+      return primaryQaPairs;
+    }
   }
 
   const fallbackPrompt = buildFallbackHeadingPrompt({
@@ -332,7 +351,11 @@ async function extractAgenticQaPairs({ config, drugName, documentUrl, text, attr
     headings: fallbackHeadings,
     labelPrefix: "fallback"
   });
-  return normalizeQaPairs(drugName, fallbackQaPairs);
+  const normalizedFallbackQaPairs = normalizeQaPairs(drugName, fallbackQaPairs);
+  if (normalizedFallbackQaPairs.length > 0) {
+    return normalizedFallbackQaPairs;
+  }
+  return primaryQaPairs;
 }
 
 export function createPerplexityAgenticExtractor(config) {
