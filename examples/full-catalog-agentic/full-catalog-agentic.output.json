@@ -1,0 +1,423 @@
+{
+  "generatedAt": "2026-04-08T16:53:00.968Z",
+  "command": "node src/cli.mjs --all-drugs --doc-qa-extractor agentic --skip-trumprx --save-intermediate --output ./examples/full-catalog-agentic/full-catalog-agentic.output.json",
+  "totalDrugs": 81,
+  "summary": {
+    "parsed": 76,
+    "missing": 5
+  },
+  "rows": [
+    {
+      "drugName": "xeljanz",
+      "questionCount": 11,
+      "status": "parsed"
+    },
+    {
+      "drugName": "avapro",
+      "questionCount": 10,
+      "status": "parsed"
+    },
+    {
+      "drugName": "invokamet",
+      "questionCount": 10,
+      "status": "parsed"
+    },
+    {
+      "drugName": "arnuity-ellipta",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "chantix",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "diflucan",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "invokamet-xr",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "invokana",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "lantus",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "nicotrol",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "ozempic",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "pristiq",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "tabrecta",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "toviaz",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "zepbound-kwikpen",
+      "questionCount": 9,
+      "status": "parsed"
+    },
+    {
+      "drugName": "anoro-ellipta",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "colestid",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "cortef",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "farxiga",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "incruse-ellipta",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "mayzent",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "merilog",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "plavix",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "priftin",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "protonix",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "ventolin-hfa",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "vfend",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "xarelto",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "zepbound",
+      "questionCount": 8,
+      "status": "parsed"
+    },
+    {
+      "drugName": "abrilada",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "admelog",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "airsupra",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "apidra",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "eucrisa",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "insulin-lispro",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "repatha",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "rydapt",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "toujeo",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "viracept",
+      "questionCount": 7,
+      "status": "parsed"
+    },
+    {
+      "drugName": "aimovig",
+      "questionCount": 6,
+      "status": "parsed"
+    },
+    {
+      "drugName": "azulfidine-en-tabs",
+      "questionCount": 6,
+      "status": "parsed"
+    },
+    {
+      "drugName": "cleocin",
+      "questionCount": 6,
+      "status": "parsed"
+    },
+    {
+      "drugName": "estring",
+      "questionCount": 6,
+      "status": "parsed"
+    },
+    {
+      "drugName": "insulin-glargine",
+      "questionCount": 6,
+      "status": "parsed"
+    },
+    {
+      "drugName": "levoxyl",
+      "questionCount": 6,
+      "status": "parsed"
+    },
+    {
+      "drugName": "relenza",
+      "questionCount": 6,
+      "status": "parsed"
+    },
+    {
+      "drugName": "azulfidine",
+      "questionCount": 5,
+      "status": "parsed"
+    },
+    {
+      "drugName": "cytomel",
+      "questionCount": 5,
+      "status": "parsed"
+    },
+    {
+      "drugName": "lopid",
+      "questionCount": 5,
+      "status": "parsed"
+    },
+    {
+      "drugName": "medrol",
+      "questionCount": 5,
+      "status": "parsed"
+    },
+    {
+      "drugName": "lovenox",
+      "questionCount": 4,
+      "status": "parsed"
+    },
+    {
+      "drugName": "xigduo",
+      "questionCount": 4,
+      "status": "parsed"
+    },
+    {
+      "drugName": "ngenla",
+      "questionCount": 3,
+      "status": "parsed"
+    },
+    {
+      "drugName": "tikosyn",
+      "questionCount": 3,
+      "status": "parsed"
+    },
+    {
+      "drugName": "malarone",
+      "questionCount": 2,
+      "status": "parsed"
+    },
+    {
+      "drugName": "zavzpret",
+      "questionCount": 2,
+      "status": "parsed"
+    },
+    {
+      "drugName": "bevespi",
+      "questionCount": 1,
+      "status": "parsed"
+    },
+    {
+      "drugName": "duavee",
+      "questionCount": 1,
+      "status": "parsed"
+    },
+    {
+      "drugName": "premarin",
+      "questionCount": 1,
+      "status": "parsed"
+    },
+    {
+      "drugName": "premarin-vc",
+      "questionCount": 1,
+      "status": "parsed"
+    },
+    {
+      "drugName": "prempro",
+      "questionCount": 1,
+      "status": "parsed"
+    },
+    {
+      "drugName": "zarontin",
+      "questionCount": 1,
+      "status": "parsed"
+    },
+    {
+      "drugName": "advair-diskus",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "advair-hfa",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "alphagan",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "amjevita",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "cetrotide",
+      "questionCount": 0,
+      "status": "missing"
+    },
+    {
+      "drugName": "combigan",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "genotropin",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "gonal-f",
+      "questionCount": 0,
+      "status": "missing"
+    },
+    {
+      "drugName": "humira-pen",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "humira-syringe",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "jentadueto",
+      "questionCount": 0,
+      "status": "missing"
+    },
+    {
+      "drugName": "jentadueto-xr",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "ovidrel",
+      "questionCount": 0,
+      "status": "missing"
+    },
+    {
+      "drugName": "primaquine-phosphate",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "striverdi-respimat",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "synthroid",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "wegovy",
+      "questionCount": 0,
+      "status": "missing"
+    },
+    {
+      "drugName": "wegovy-pill",
+      "questionCount": 0,
+      "status": "parsed"
+    },
+    {
+      "drugName": "zyvox",
+      "questionCount": 0,
+      "status": "parsed"
+    }
+  ],
+  "unfinishedDrugs": [
+    "cetrotide",
+    "gonal-f",
+    "jentadueto",
+    "ovidrel",
+    "wegovy"
+  ]
+}
