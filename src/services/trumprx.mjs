@@ -117,7 +117,7 @@ async function findTrumpRxPatientInfoPdfUrl({ browser, trumpRxUrl, page }) {
   return textCandidates[0] || "";
 }
 
-export async function findTrumpRxProduct({ drugName, aliases, browser, trumpRxBaseUrl }) {
+export async function findTrumpRxProduct({ drugName, aliases = {}, browser, trumpRxBaseUrl }) {
   const candidates = [drugName, ...(aliases[drugName] || [])]
     .map(slugify)
     .filter(Boolean);

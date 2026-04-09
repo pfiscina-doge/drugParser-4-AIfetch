@@ -17,7 +17,7 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "");
 }
 
-export async function findLocalHtmlRecord({ drugName, aliases, sourceHtmlDir }) {
+export async function findLocalHtmlRecord({ drugName, aliases = {}, sourceHtmlDir }) {
   if (!sourceHtmlDir) {
     return null;
   }

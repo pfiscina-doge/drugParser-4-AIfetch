@@ -154,9 +154,8 @@ async function main() {
   const outputPath = path.resolve(rootDir, args.output);
   const intermediateDir = path.resolve(rootDir, args.intermediateDir);
 
-  const [catalogRaw, aliasRaw, questionPatternRaw, runtimeRaw] = await Promise.all([
+  const [catalogRaw, questionPatternRaw, runtimeRaw] = await Promise.all([
     readFile(catalogPath, "utf8"),
-    readFile(path.resolve(rootDir, "config/aliases.json"), "utf8"),
     readFile(path.resolve(rootDir, "config/question-patterns.json"), "utf8"),
     readFile(path.resolve(rootDir, "config/runtime.json"), "utf8")
   ]);
@@ -178,7 +177,6 @@ async function main() {
   const results = await runPipeline({
     catalog: selectedCatalog,
     config: {
-      aliases: JSON.parse(aliasRaw),
       questionPatterns: JSON.parse(questionPatternRaw),
       newDocParseMethod: args.newDocParseMethod,
       diffEngine: args.diffEngine,

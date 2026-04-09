@@ -166,7 +166,6 @@ async function processDrug({
   }
   const localHtmlRecord = await findLocalHtmlRecord({
     drugName,
-    aliases: config.aliases,
     sourceHtmlDir: config.sourceHtmlDir
   });
 
@@ -211,7 +210,6 @@ async function processDrug({
 
   const trumpRxMatch = await findTrumpRxProduct({
     drugName,
-    aliases: config.aliases,
     browser,
     trumpRxBaseUrl: config.trumpRxBaseUrl
   });
