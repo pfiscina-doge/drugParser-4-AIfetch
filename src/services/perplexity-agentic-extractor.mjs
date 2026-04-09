@@ -46,6 +46,7 @@ function buildFallbackHeadingPrompt({ drugName, documentUrl, text, attributionTy
     "Do not use outside knowledge, search results, or content from any other URLs.",
     ...(onlyFromCatalogURL ? ["- Do not follow links or use content from any other URLs."] : ["Do not follow links."]),
     "Also look for highlights and headings that begin a line with several dashes or m-dashes.",
+    "Only use dashed headings in the opening highlights block.",
     "Use those dashed or m-dash headings as the question text.",
     'For every returned heading, set "type" to "type-noguide-found".',
     "Rules:",
