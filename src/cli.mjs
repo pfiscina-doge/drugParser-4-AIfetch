@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { runPipeline } from "./pipeline.mjs";
 
@@ -9,7 +9,7 @@ function parseArgs(argv) {
     catalog: "",
     drugs: "",
     allDrugs: false,
-    output: "",
+    output: "./output/summary.json",
     intermediateDir: "./output/intermediate",
     saveIntermediate: false,
     agenticDebug: false,
@@ -82,15 +82,50 @@ function parseArgs(argv) {
     }
   }
 
-  if (!args.output) {
-    throw new Error("Missing required argument: --output");
-  }
-
   if (!args.catalog && !args.drugs && !args.allDrugs) {
     args.allDrugs = true;
   }
 
   return args;
+}
+
+
+async function clearDirectory(dirPath) {
+  await mkdir(dirPath, { recursive: true });
+  const entries = await readdir(dirPath);
+  await Promise.all(entries.map((entry) => rm(path.join(dirPath, entry), { recursive: true, force: true })));
+}
+
+function buildPerDrugWrapper(results, result) {
+  return {
+    generatedAt: results.generatedAt,
+    configUsed: results.configUsed,
+    summaryCounts: [
+      {
+        drugName: result.drugName,
+        sourceQuestionCount: result.sourceQuestionCount || 0,
+        status: result.status
+      }
+    ],
+    results: [result]
+  };
+}
+
+function buildStandardSummary({ results, catalogPath, outputDir, intermediateDir }) {
+  return {
+    generatedAt: results.generatedAt,
+    catalogPath,
+    configUsed: results.configUsed,
+    results: results.results.map((result) => ({
+      drugName: result.drugName,
+      runtimeSeconds: result.runtimeSeconds ?? null,
+      questionCount: result.sourceQuestionCount || 0,
+      promptPath: result.sourcePromptPath || "none",
+      status: result.status,
+      outputJson: path.join(outputDir, `${result.drugName}.run.json`),
+      sourceQaJson: path.join(intermediateDir, `${result.drugName}.source-qa.json`)
+    }))
+  };
 }
 
 function selectCatalogEntries(catalog, args) {
@@ -115,6 +150,7 @@ async function main() {
   const args = parseArgs(process.argv);
   const rootDir = process.cwd();
   const catalogPath = path.resolve(rootDir, args.catalog || DEFAULT_CATALOG_RESOURCE);
+  const outputRoot = path.resolve(rootDir, "./output");
   const outputPath = path.resolve(rootDir, args.output);
   const intermediateDir = path.resolve(rootDir, args.intermediateDir);
 
@@ -124,6 +160,9 @@ async function main() {
     readFile(path.resolve(rootDir, "config/question-patterns.json"), "utf8"),
     readFile(path.resolve(rootDir, "config/runtime.json"), "utf8")
   ]);
+
+  await clearDirectory(outputRoot);
+  await clearDirectory(intermediateDir);
 
   const runtimeConfig = JSON.parse(runtimeRaw);
   const llmConfig = runtimeConfig.llm || {};
@@ -155,12 +194,25 @@ async function main() {
       intermediateDir,
       sourceHtmlDir: args.sourceHtmlDir ? path.resolve(rootDir, args.sourceHtmlDir) : "",
       trumpRxBaseUrl: args.trumpRxBaseUrl || runtimeConfig.trumpRxBaseUrl,
-      perplexityBaseUrl: args.perplexityBaseUrl
+      perplexityBaseUrl: args.perplexityBaseUrl,
+      maxQuestionsPerDrug: runtimeConfig.maxQuestionsPerDrug
     }
   });
 
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, JSON.stringify(results, null, 2));
+  await Promise.all(results.results.map((result) => writeFile(
+    path.join(outputRoot, `${result.drugName}.run.json`),
+    JSON.stringify(buildPerDrugWrapper(results, result), null, 2)
+  )));
+
+  const standardSummary = buildStandardSummary({
+    results,
+    catalogPath,
+    outputDir: outputRoot,
+    intermediateDir
+  });
+
+  await writeFile(path.join(outputRoot, "full-run.json"), JSON.stringify(results, null, 2));
+  await writeFile(outputPath, JSON.stringify(standardSummary, null, 2));
 }
 
 main().catch((error) => {

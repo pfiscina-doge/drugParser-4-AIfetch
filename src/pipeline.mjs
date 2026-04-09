@@ -29,6 +29,7 @@ export async function runPipeline({ catalog, config }) {
   }
 
   for (const [drugName, catalogEntry] of Object.entries(catalog)) {
+    const startedAt = Date.now();
     try {
       const result = await withTimeout(
         processDrug({
@@ -41,6 +42,11 @@ export async function runPipeline({ catalog, config }) {
         120000,
         `Timed out processing ${drugName}`
       );
+      result.runtimeSeconds = Number(((Date.now() - startedAt) / 1000).toFixed(3));
+      result.sourcePromptPath = inferSourcePromptPath({
+        qaExtractorName: qaExtractor.name,
+        extractedQa: result.sourceExtraction?.qaPairs || []
+      });
       results.push(result);
     } catch (error) {
       results.push({
@@ -72,6 +78,8 @@ export async function runPipeline({ catalog, config }) {
           qaPairs: []
         },
         status: "processing error",
+        sourcePromptPath: "none",
+        runtimeSeconds: Number(((Date.now() - startedAt) / 1000).toFixed(3)),
         setSimilarityScore: 0,
         diff: []
       });
@@ -98,6 +106,23 @@ export async function runPipeline({ catalog, config }) {
 
 function normalizeUrl(value) {
   return String(value || "").replace(/^>+|<+$/g, "").trim();
+}
+
+function isTooManyQuestions({ extractedQa, config }) {
+  const cutoff = Number(config.maxQuestionsPerDrug);
+  return Number.isFinite(cutoff) && cutoff > 0 && extractedQa.length > cutoff;
+}
+
+function inferSourcePromptPath({ qaExtractorName, extractedQa }) {
+  if (!Array.isArray(extractedQa) || extractedQa.length === 0) {
+    return "none";
+  }
+
+  if (qaExtractorName !== "agentic") {
+    return qaExtractorName || "none";
+  }
+
+  return extractedQa.some((pair) => pair?.type === "type-noguide-found") ? "secondary" : "primary";
 }
 
 async function processDrug({
@@ -156,14 +181,45 @@ async function processDrug({
     await writeFile(filePath, JSON.stringify(extractedQa, null, 2));
   }
 
-  if (config.skipTrumpRx) {
+  if (isTooManyQuestions({ extractedQa, config })) {
     return {
       drugName,
       catalogEntry,
       qaExtractionMethod,
       localSourceFile: localHtmlRecord,
       sourceQuestionCount: extractedQa.length,
-      sourceQuestionCount: extractedQa.length,
+      sourceExtraction: {
+        sourceUrl: catalogEntry.url,
+        headingDetected: sourceDocument.headingDetected,
+        qaPairs: extractedQa
+      },
+      trumpRx: {
+        found: false,
+        status: "skipped",
+        url: null,
+        medGuideUrl: null,
+        medGuideMatchesCatalogUrl: false,
+        retrievalSteps: [
+          {
+            step: "question-cutoff",
+            status: "skipped",
+            detail: `Stopped after source extraction because question count ${extractedQa.length} exceeded configured cutoff ${config.maxQuestionsPerDrug}.`
+          }
+        ],
+        qaPairs: []
+      },
+      status: "toomanyQuestions",
+      setSimilarityScore: 0,
+      diff: []
+    };
+  }
+
+  if (config.skipTrumpRx) {
+    return {
+      drugName,
+      catalogEntry,
+      qaExtractionMethod,
+      localSourceFile: localHtmlRecord,
       sourceQuestionCount: extractedQa.length,
       sourceExtraction: {
         sourceUrl: catalogEntry.url,
