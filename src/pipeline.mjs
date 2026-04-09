@@ -108,11 +108,6 @@ function normalizeUrl(value) {
   return String(value || "").replace(/^>+|<+$/g, "").trim();
 }
 
-function isTooManyQuestions({ extractedQa, config }) {
-  const cutoff = Number(config.maxQuestionsPerDrug);
-  return Number.isFinite(cutoff) && cutoff > 0 && extractedQa.length > cutoff;
-}
-
 function inferSourcePromptPath({ qaExtractorName, extractedQa }) {
   if (!Array.isArray(extractedQa) || extractedQa.length === 0) {
     return "none";
@@ -179,39 +174,6 @@ async function processDrug({
   if (config.saveIntermediate) {
     const filePath = path.join(config.intermediateDir, `${drugName}.source-qa.json`);
     await writeFile(filePath, JSON.stringify(extractedQa, null, 2));
-  }
-
-  if (isTooManyQuestions({ extractedQa, config })) {
-    return {
-      drugName,
-      catalogEntry,
-      qaExtractionMethod,
-      localSourceFile: localHtmlRecord,
-      sourceQuestionCount: extractedQa.length,
-      sourceExtraction: {
-        sourceUrl: catalogEntry.url,
-        headingDetected: sourceDocument.headingDetected,
-        qaPairs: extractedQa
-      },
-      trumpRx: {
-        found: false,
-        status: "skipped",
-        url: null,
-        medGuideUrl: null,
-        medGuideMatchesCatalogUrl: false,
-        retrievalSteps: [
-          {
-            step: "question-cutoff",
-            status: "skipped",
-            detail: `Stopped after source extraction because question count ${extractedQa.length} exceeded configured cutoff ${config.maxQuestionsPerDrug}.`
-          }
-        ],
-        qaPairs: []
-      },
-      status: "toomanyQuestions",
-      setSimilarityScore: 0,
-      diff: []
-    };
   }
 
   if (config.skipTrumpRx) {

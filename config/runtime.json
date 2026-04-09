@@ -6,6 +6,5 @@
     "model": "sonar",
     "apiKeyEnvVar": "PERPLEXITY_API_KEY",
     "apiKeyFile": "./config/perplexity-key-pf.txt"
-  },
-  "maxQuestionsPerDrug": 15
+  }
 }
