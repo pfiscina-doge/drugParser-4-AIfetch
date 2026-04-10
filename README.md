@@ -6,6 +6,7 @@ This project ingests a shared full drug catalog resource and can run either the 
 
 - The code is adapter-based because the requested browser workflow depends on an external browser agent runtime that is not present in this workspace.
 - A built-in `fetch` document parser is included for basic HTML/PDF download workflows.
+- A built-in `llama-path` parse-only mode can be enabled via LlamaParse.
 - A built-in `heuristic` diff engine is included so the pipeline runs end-to-end without an LLM.
 - A built-in `rule-based` document QA extractor is the default.
 - An `agentic` document QA extractor can be enabled with Perplexity by default, while the endpoint and model remain configurable. Old `ai` invocations are treated as a compatibility alias for `agentic`.
@@ -40,7 +41,22 @@ At the start of each drug run, `chooseQAExtractionMethod` picks the document par
 - catalog URL ending in `.pdf`: uses the Mayzent-style `fetch` path
 - catalog URL not ending in `.pdf`: uses the Chantix-style `agent-browser` path
 
-You can still override that choice explicitly with `--new-doc-parse-method <fetch|agent-browser>`.
+You can still override that choice explicitly with `--new-doc-parse-method <fetch|agent-browser|llama-path>`.
+
+When `--new-doc-parse-method llama-path` is selected:
+
+- source documents are downloaded locally and parsed with the official `@llamaindex/llama-cloud` SDK
+- the parser requests `markdown` by default
+- the current `llama-path` branch parses the source document once, then runs `llama-agentic-qa-extraction` over the markdown text
+- `llama-agentic-qa-extraction` uses a LlamaIndex query engine with a configurable LLM provider
+- the default provider is Perplexity, wired through the OpenAI-compatible LlamaIndex adapter
+- Claude is also supported through the Anthropic LlamaIndex adapter
+- markdown is only written to disk when `--llama-path-save-markdown` is passed
+
+LlamaParse authentication and TLS notes:
+
+- the parser checks `LLAMA_CLOUD_API_KEY` first and also supports `LLAMAPARSE_API_KEY`
+- if your environment has certificate-chain issues with Llama Cloud, you can set `LLAMAPARSE_INSECURE_TLS=1` to disable TLS verification for that process
 
 Choose how document text is turned into question/answer pairs with `--doc-qa-extractor`:
 
@@ -159,12 +175,21 @@ Files in `examples/chantix`:
 - `--save-intermediate`
 - `--agentic-debug`: when using `agentic`, writes the exact prompt and raw response under the intermediate directory
 - `--only-from-catalog-url`: when using `agentic`, tells the LLM to use only the parsed content from the source URL and not follow links
-- `--new-doc-parse-method <fetch|agent-browser>`: optional override for `chooseQAExtractionMethod`
+- `--new-doc-parse-method <fetch|agent-browser|llama-path>`: optional override for document loading
 - `--diff-engine <heuristic|perplexity>`
 - `--doc-qa-extractor <rule-based|agentic>`: defaults to `rule-based`
 - `--llm-base-url <url>`
 - `--llm-api-key <key>`
 - `--llm-model <model>`
+- `--llama-path-base-url <url>`
+- `--llama-path-api-key <key>`
+- `--llama-path-result-type <markdown|text>`
+- `--llama-path-save-markdown`: optional CLI-only flag that writes the parsed markdown work file to `--intermediate-dir`
+- `--llama-agentic-qa-provider <perplexity|claude|openai>`
+- `--llama-agentic-qa-model <model>`
+- `--llama-agentic-qa-query <text>`
+- `--llama-agentic-qa-api-key <key>`
+- `--anthropic-api-key <key>`
 - `--source-html-dir <path>`
 - `--trumprx-base-url <url>`
 - `--perplexity-base-url <url>`
@@ -178,6 +203,9 @@ Files in `examples/chantix`:
   - includes `trumpRxBaseUrl` and `llm` settings
 - `src/cli.mjs`: command-line entrypoint
 - `src/pipeline.mjs`: main orchestration
+- `src/llama-path-workflow.mjs`: standalone orchestration for the `llama-path` parse + markdown QA flow
+- `src/services/llama-parse-client.mjs`: isolated Llama Cloud parsing client used by `llama-path`
+- `src/services/llama-agentic-qa-extraction.mjs`: isolated markdown-to-LLM query step for `llama-path`
 - `src/perplexity-ask.mjs`: small CLI utility for direct Perplexity questions
 - `src/services/perplexity-client.mjs`: shared Perplexity API caller and response parser
 - `src/services/perplexity-agentic-extractor.mjs`: Perplexity-specific agentic extraction flow with segmented heading and answer passes
@@ -209,8 +237,27 @@ When a product is not found on TrumpRX, `status` is set to `new product`.
 
 ```json
 {
+  "network": {
+    "insecureTls": true
+  },
   "trumpRxBaseUrl": "https://trumprx.gov/p",
   "docQaExtractor": "rule-based",
+  "llamaPath": {
+    "baseUrl": "https://api.cloud.llamaindex.ai",
+    "apiKeyEnvVar": "LLAMA_CLOUD_API_KEY",
+    "apiKey": "your_llama_cloud_key_here",
+    "resultType": "markdown"
+  },
+  "llamaAgenticQa": {
+    "llmProvider": "perplexity",
+    "llmModel": "sonar",
+    "query": "Look for a section in this document called Medical Information.\nFind all questions and answers in that section.\nReturn JSON only with this exact schema:\n{\"qaPairs\":[{\"question\":\"...\",\"answer\":\"...\"}]}\nUse exact text copied from the source section.\nDo not summarize or paraphrase.\nIf the section does not exist, fallback to the closest patient-facing section and still return exact copied text.\nIf nothing is found, return {\"qaPairs\":[]}."
+  },
+  "anthropic": {
+    "apiKeyEnvVar": "ANTHROPIC_API_KEY",
+    "apiKeyFile": "./config/anthropic-key.txt",
+    "model": "claude-3-5-sonnet-latest"
+  },
   "llm": {
     "baseUrl": "https://api.perplexity.ai",
     "model": "sonar",
@@ -221,6 +268,17 @@ When a product is not found on TrumpRX, `status` is set to `new product`.
 ```
 
 - `docQaExtractor`: default document QA extractor used by the CLI when `--doc-qa-extractor` is not passed
+- `network.insecureTls`: when `true`, the CLI entry disables TLS verification for all outbound HTTPS calls in this process and adds `-k` to curl fallbacks
+- `llamaPath.baseUrl`: LlamaParse API base URL used when `--new-doc-parse-method llama-path`
+- `llamaPath.apiKeyEnvVar`: environment variable checked for the LlamaParse API key
+- `llamaPath.apiKey`: optional inline API key used by the CLI for the parse-only path
+- `llamaPath.resultType`: LlamaParse output format requested by the parser path, usually `markdown` or `text`
+- `llamaAgenticQa.llmProvider`: default provider for the markdown query step, currently `perplexity`, `claude`, or `openai`
+- `llamaAgenticQa.llmModel`: default model used by the selected provider
+- `llamaAgenticQa.query`: default query sent to the markdown query engine
+- `anthropic.apiKeyEnvVar`: environment variable used when Claude is selected
+- `anthropic.apiKeyFile`: optional local file path for the Anthropic API key
+- `anthropic.model`: default Claude model for the markdown query step
 - `llm.baseUrl`: Perplexity API base URL used when `--doc-qa-extractor agentic`
 - `llm.model`: Perplexity model name sent to the chat completions API
 - `llm.apiKeyEnvVar`: environment variable name to read the API key from, defaulting to `PERPLEXITY_API_KEY`

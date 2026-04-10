@@ -1,8 +1,22 @@
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { runPipeline } from "./pipeline.mjs";
+import { applyGlobalTlsRuntimeConfig } from "./services/network-runtime.mjs";
 
 const DEFAULT_CATALOG_RESOURCE = "./config/catalog.full.json";
+
+function parseApiKeyFileContents(raw) {
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const assignmentMatch = trimmed.match(/^(?:export\s+)?api_key\s*=\s*["']?([^"'\\n]+)["']?\s*$/i);
+  if (assignmentMatch) {
+    return assignmentMatch[1].trim();
+  }
+
+  return trimmed;
+}
 
 function parseArgs(argv) {
   const args = {
@@ -21,6 +35,15 @@ function parseArgs(argv) {
     llmBaseUrl: "",
     llmApiKey: "",
     llmModel: "",
+    llamaPathBaseUrl: "",
+    llamaPathApiKey: "",
+    llamaPathResultType: "",
+    llamaPathSaveMarkdown: false,
+    llamaAgenticQaProvider: "",
+    llamaAgenticQaModel: "",
+    llamaAgenticQaQuery: "",
+    llamaAgenticQaApiKey: "",
+    anthropicApiKey: "",
     sourceHtmlDir: "",
     trumpRxBaseUrl: "https://trumprx.gov/p",
     perplexityBaseUrl: "https://www.perplexity.ai/"
@@ -62,6 +85,32 @@ function parseArgs(argv) {
     } else if (token === "--llm-model" && next) {
       args.llmModel = next;
       index += 1;
+    } else if (token === "--llama-path-base-url" && next) {
+      args.llamaPathBaseUrl = next;
+      index += 1;
+    } else if (token === "--llama-path-api-key" && next) {
+      args.llamaPathApiKey = next;
+      index += 1;
+    } else if (token === "--llama-path-result-type" && next) {
+      args.llamaPathResultType = next;
+      index += 1;
+    } else if (token === "--llama-path-save-markdown") {
+      args.llamaPathSaveMarkdown = true;
+    } else if (token === "--llama-agentic-qa-provider" && next) {
+      args.llamaAgenticQaProvider = next;
+      index += 1;
+    } else if (token === "--llama-agentic-qa-model" && next) {
+      args.llamaAgenticQaModel = next;
+      index += 1;
+    } else if (token === "--llama-agentic-qa-query" && next) {
+      args.llamaAgenticQaQuery = next;
+      index += 1;
+    } else if (token === "--llama-agentic-qa-api-key" && next) {
+      args.llamaAgenticQaApiKey = next;
+      index += 1;
+    } else if (token === "--anthropic-api-key" && next) {
+      args.anthropicApiKey = next;
+      index += 1;
     } else if (token === "--source-html-dir" && next) {
       args.sourceHtmlDir = next;
       index += 1;
@@ -94,6 +143,18 @@ async function clearDirectory(dirPath) {
   await mkdir(dirPath, { recursive: true });
   const entries = await readdir(dirPath);
   await Promise.all(entries.map((entry) => rm(path.join(dirPath, entry), { recursive: true, force: true })));
+}
+
+async function readOptionalParsedKeyFile(filePath) {
+  if (!filePath) {
+    return "";
+  }
+
+  try {
+    return parseApiKeyFileContents(await readFile(filePath, "utf8"));
+  } catch {
+    return "";
+  }
 }
 
 function buildPerDrugWrapper(results, result) {
@@ -153,49 +214,106 @@ async function main() {
   const outputRoot = path.resolve(rootDir, "./output");
   const outputPath = path.resolve(rootDir, args.output);
   const intermediateDir = path.resolve(rootDir, args.intermediateDir);
+  const runtimePath = path.resolve(rootDir, "config/runtime.json");
 
   const [catalogRaw, questionPatternRaw, runtimeRaw] = await Promise.all([
     readFile(catalogPath, "utf8"),
     readFile(path.resolve(rootDir, "config/question-patterns.json"), "utf8"),
-    readFile(path.resolve(rootDir, "config/runtime.json"), "utf8")
+    readFile(runtimePath, "utf8")
   ]);
 
   await clearDirectory(outputRoot);
   await clearDirectory(intermediateDir);
 
   const runtimeConfig = JSON.parse(runtimeRaw);
+  applyGlobalTlsRuntimeConfig(runtimeConfig);
+  const [
+    { runPipeline },
+    { runLlamaPathWorkflow },
+    { buildExtractionPrompt }
+  ] = await Promise.all([
+    import("./pipeline.mjs"),
+    import("./llama-path-workflow.mjs"),
+    import("./services/llama-agentic-qa-extraction.mjs")
+  ]);
   const llmConfig = runtimeConfig.llm || {};
+  const llamaPathConfig = runtimeConfig.llamaPath || {};
+  const llamaAgenticQaConfig = runtimeConfig.llamaAgenticQa || {};
+  const anthropicConfig = runtimeConfig.anthropic || {};
   const fullCatalog = JSON.parse(catalogRaw);
   const selectedCatalog = selectCatalogEntries(fullCatalog, args);
   const llmApiKeyFile = llmConfig.apiKeyFile
     ? path.resolve(rootDir, llmConfig.apiKeyFile)
     : "";
   const llmApiKeyFromFile = !args.llmApiKey && llmApiKeyFile
-    ? (await readFile(llmApiKeyFile, "utf8")).trim()
+    ? await readOptionalParsedKeyFile(llmApiKeyFile)
     : "";
+  const llamaPathApiKeyFile = llamaPathConfig.apiKeyFile
+    ? path.resolve(rootDir, llamaPathConfig.apiKeyFile)
+    : "";
+  const llamaPathApiKeyFromFile = !args.llamaPathApiKey && llamaPathApiKeyFile
+    ? await readOptionalParsedKeyFile(llamaPathApiKeyFile)
+    : "";
+  const anthropicApiKeyFile = anthropicConfig.apiKeyFile
+    ? path.resolve(rootDir, anthropicConfig.apiKeyFile)
+    : "";
+  const anthropicApiKeyFromFile = !args.anthropicApiKey && anthropicApiKeyFile
+    ? await readOptionalParsedKeyFile(anthropicApiKeyFile)
+    : "";
+  const resolvedLlamaPathApiKey = args.llamaPathApiKey
+    || String(llamaPathConfig.apiKey || "").trim()
+    || llamaPathApiKeyFromFile;
 
-  const results = await runPipeline({
-    catalog: selectedCatalog,
-    config: {
-      questionPatterns: JSON.parse(questionPatternRaw),
-      newDocParseMethod: args.newDocParseMethod,
-      diffEngine: args.diffEngine,
-      docQaExtractor: args.docQaExtractor || runtimeConfig.docQaExtractor || "rule-based",
-      llmBaseUrl: args.llmBaseUrl || llmConfig.baseUrl || "",
-      llmApiKey: args.llmApiKey || llmApiKeyFromFile,
-      llmApiKeyEnvVar: llmConfig.apiKeyEnvVar || "PERPLEXITY_API_KEY",
-      llmModel: args.llmModel || llmConfig.model || "",
-      saveIntermediate: args.saveIntermediate,
-      agenticDebug: args.agenticDebug,
-      onlyFromCatalogURL: args.onlyFromCatalogURL,
-      skipTrumpRx: args.skipTrumpRx,
-      intermediateDir,
-      sourceHtmlDir: args.sourceHtmlDir ? path.resolve(rootDir, args.sourceHtmlDir) : "",
-      trumpRxBaseUrl: args.trumpRxBaseUrl || runtimeConfig.trumpRxBaseUrl,
-      perplexityBaseUrl: args.perplexityBaseUrl,
-      maxQuestionsPerDrug: runtimeConfig.maxQuestionsPerDrug
-    }
-  });
+  if (resolvedLlamaPathApiKey) {
+    process.env.LLAMA_CLOUD_API_KEY = resolvedLlamaPathApiKey;
+    process.env.LLAMAPARSE_API_KEY = resolvedLlamaPathApiKey;
+  }
+
+  const pipelineConfig = {
+    questionPatterns: JSON.parse(questionPatternRaw),
+    newDocParseMethod: args.newDocParseMethod,
+    diffEngine: args.diffEngine,
+    docQaExtractor: args.docQaExtractor || runtimeConfig.docQaExtractor || "rule-based",
+    llmBaseUrl: args.llmBaseUrl || llmConfig.baseUrl || "",
+    llmApiKey: args.llmApiKey || llmApiKeyFromFile,
+    llmApiKeyEnvVar: llmConfig.apiKeyEnvVar || "PERPLEXITY_API_KEY",
+    llmModel: args.llmModel || llmConfig.model || "",
+    llamaPathBaseUrl: args.llamaPathBaseUrl || llamaPathConfig.baseUrl || "",
+    llamaPathApiKey: resolvedLlamaPathApiKey,
+    llamaPathApiKeyEnvVar: llamaPathConfig.apiKeyEnvVar || "LLAMA_CLOUD_API_KEY",
+    llamaPathResultType: args.llamaPathResultType || llamaPathConfig.resultType || "markdown",
+    llamaPathPollIntervalMs: llamaPathConfig.pollIntervalMs,
+    llamaPathTimeoutMs: llamaPathConfig.timeoutMs,
+    llamaPathSaveMarkdown: Boolean(args.llamaPathSaveMarkdown),
+    llamaAgenticQaProvider: args.llamaAgenticQaProvider || llamaAgenticQaConfig.llmProvider || "perplexity",
+    llamaAgenticQaModel: args.llamaAgenticQaModel || llamaAgenticQaConfig.llmModel || llmConfig.model || "sonar",
+    llamaAgenticQaQuery: args.llamaAgenticQaQuery || llamaAgenticQaConfig.query || buildExtractionPrompt(),
+    llamaAgenticQaApiKey: args.llamaAgenticQaApiKey || "",
+    anthropicApiKey: args.anthropicApiKey || anthropicApiKeyFromFile,
+    anthropicApiKeyEnvVar: anthropicConfig.apiKeyEnvVar || "ANTHROPIC_API_KEY",
+    anthropicModel: anthropicConfig.model || "claude-3-5-sonnet-latest",
+    saveIntermediate: args.saveIntermediate,
+    agenticDebug: args.agenticDebug,
+    onlyFromCatalogURL: args.onlyFromCatalogURL,
+    skipTrumpRx: args.skipTrumpRx,
+    intermediateDir,
+    sourceHtmlDir: args.sourceHtmlDir ? path.resolve(rootDir, args.sourceHtmlDir) : "",
+    trumpRxBaseUrl: args.trumpRxBaseUrl || runtimeConfig.trumpRxBaseUrl,
+    perplexityBaseUrl: args.perplexityBaseUrl,
+    maxQuestionsPerDrug: runtimeConfig.maxQuestionsPerDrug
+  };
+
+  pipelineConfig.newDocParseMethod = args.newDocParseMethod;
+
+  const results = args.newDocParseMethod === "llama-path"
+    ? await runLlamaPathWorkflow({
+        catalog: selectedCatalog,
+        config: pipelineConfig
+      })
+    : await runPipeline({
+        catalog: selectedCatalog,
+        config: pipelineConfig
+      });
 
   await Promise.all(results.results.map((result) => writeFile(
     path.join(outputRoot, `${result.drugName}.run.json`),

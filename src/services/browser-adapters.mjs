@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { execFile, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
+import { parseDocumentWithLlamaParse } from "./llama-parse-client.mjs";
+import { getCurlTlsArgs } from "./network-runtime.mjs";
 
 const execFileAsync = promisify(execFile);
 const REQUEST_TIMEOUT_MS = 45000;
@@ -93,7 +95,7 @@ async function fetchText(url) {
   let curlError = null;
 
   try {
-    await execFileAsync("curl", ["--http1.1", "--max-time", "45", "-L", "-sS", "-D", "-", "-o", targetPath, url], {
+    await execFileAsync("curl", [...getCurlTlsArgs(), "--http1.1", "--max-time", "45", "-L", "-sS", "-D", "-", "-o", targetPath, url], {
       maxBuffer: 10 * 1024 * 1024
     });
 
@@ -132,7 +134,7 @@ async function extractPdfText(url) {
   ].join("\n");
 
   try {
-    await execFileAsync("curl", ["--http1.1", "--max-time", "45", "-L", "-sS", "-o", pdfPath, url], {
+    await execFileAsync("curl", [...getCurlTlsArgs(), "--http1.1", "--max-time", "45", "-L", "-sS", "-o", pdfPath, url], {
       maxBuffer: 10 * 1024 * 1024
     });
 
@@ -311,7 +313,43 @@ function createAgentBrowserAdapter() {
   };
 }
 
+function createLlamaParseBrowserAdapter(config) {
+  const fetchAdapter = createFetchBrowserAdapter();
+
+  return {
+    name: "llama-path",
+
+    async loadCatalogEntry({ catalogEntry }) {
+      const cleanUrl = String(catalogEntry.url).replace(/^>+|<+$/g, "").trim();
+      const parsed = await parseDocumentWithLlamaParse({
+        url: cleanUrl,
+        config
+      });
+      const attributedSection = {
+        text: String(parsed.text || ""),
+        headingDetected: detectHeading(parsed.text, catalogEntry.attributionType)
+      };
+
+      return {
+        url: cleanUrl,
+        text: attributedSection.text,
+        rawText: parsed.text,
+        markdown: parsed.text,
+        headingDetected: attributedSection.headingDetected
+      };
+    },
+
+    async loadWebPageText(url) {
+      return fetchAdapter.loadWebPageText(url);
+    }
+  };
+}
+
 export function createBrowserAdapter(config) {
+  if (config.newDocParseMethod === "llama-path") {
+    return createLlamaParseBrowserAdapter(config);
+  }
+
   if (config.newDocParseMethod === "agent-browser") {
     return createAgentBrowserAdapter();
   }

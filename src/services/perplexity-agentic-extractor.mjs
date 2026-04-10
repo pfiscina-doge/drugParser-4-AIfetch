@@ -375,11 +375,12 @@ export function createPerplexityAgenticExtractor(config) {
         drugName,
         catalogEntry
       });
+      const documentText = String(sourceDocument.markdown || sourceDocument.text || "");
       const qaPairs = await extractAgenticQaPairs({
         config,
         drugName,
         documentUrl: catalogEntry?.url,
-        text: sourceDocument.text,
+        text: documentText,
         attributionType: catalogEntry?.attributionType
       });
 

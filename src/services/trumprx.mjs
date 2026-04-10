@@ -1,3 +1,5 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { normalizeSectionText } from "./question-extractor.mjs";
 import { findTrumpRxPdfLinkWithAgentBrowser } from "./trumprx-agent-browser.mjs";
 
@@ -301,7 +303,8 @@ export async function loadTrumpRxQa({
   medGuideUrl,
   browser,
   qaExtractor,
-  questionPatterns
+  questionPatterns,
+  config
 }) {
   const patientInfoPdfUrl = medGuideUrl || await (async () => {
     const page = await browser.loadWebPageText(trumpRxUrl);
@@ -330,6 +333,15 @@ export async function loadTrumpRxQa({
       questionPatterns,
       attributionType: "patient-info"
     });
+
+    if (config?.saveIntermediate && String(agenticResult?.sourceDocument?.markdown || "").trim()) {
+      await writeFile(
+        path.join(config.intermediateDir, `${drugName}.trumprx-document.md`),
+        String(agenticResult.sourceDocument.markdown),
+        "utf8"
+      );
+    }
+
     return agenticResult.qaPairs;
   }
 
@@ -338,10 +350,18 @@ export async function loadTrumpRxQa({
     catalogEntry: trumpRxCatalogEntry
   });
 
+  if (config?.saveIntermediate && String(pdfDocument?.markdown || "").trim()) {
+    await writeFile(
+      path.join(config.intermediateDir, `${drugName}.trumprx-document.md`),
+      String(pdfDocument.markdown),
+      "utf8"
+    );
+  }
+
   return qaExtractor.extract({
     drugName: `${drugName}-trumprx`,
     documentUrl: patientInfoPdfUrl,
-    text: normalizeSectionText(pdfDocument.text),
+    text: normalizeSectionText(pdfDocument.markdown || pdfDocument.text),
     questionPatterns,
     attributionType: "patient-info"
   });

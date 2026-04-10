@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createBrowserAdapter } from "./services/browser-adapters.mjs";
 import { createDiffEngine } from "./services/diff-engines.mjs";
+import { parseDocumentWithLlamaParse } from "./services/llama-parse-client.mjs";
 import { normalizeSectionText } from "./services/question-extractor.mjs";
 import { createQaExtractor } from "./services/qa-extractors.mjs";
 import { findLocalHtmlRecord } from "./services/local-html.mjs";
@@ -120,6 +121,15 @@ function inferSourcePromptPath({ qaExtractorName, extractedQa }) {
   return extractedQa.some((pair) => pair?.type === "type-noguide-found") ? "secondary" : "primary";
 }
 
+async function writeIntermediateMarkdown({ config, drugName, suffix = "", markdown }) {
+  if (!config.saveIntermediate || !String(markdown || "").trim()) {
+    return;
+  }
+
+  const filePath = path.join(config.intermediateDir, `${drugName}${suffix}.md`);
+  await writeFile(filePath, String(markdown), "utf8");
+}
+
 async function processDrug({
   drugName,
   catalogEntry,
@@ -135,6 +145,61 @@ async function processDrug({
     ...config,
     newDocParseMethod: qaExtractionMethod
   });
+  const localHtmlRecord = await findLocalHtmlRecord({
+    drugName,
+    sourceHtmlDir: config.sourceHtmlDir
+  });
+
+  if (qaExtractionMethod === "llama-path") {
+    const parsed = await parseDocumentWithLlamaParse({
+      url: String(catalogEntry.url).replace(/^>+|<+$/g, "").trim(),
+      config
+    });
+    const sourceDocument = {
+      url: catalogEntry.url,
+      text: parsed.text,
+      markdown: parsed.text,
+      headingDetected: null
+    };
+
+    await writeIntermediateMarkdown({
+      config,
+      drugName,
+      suffix: ".source-document",
+      markdown: sourceDocument?.markdown || sourceDocument?.text
+    });
+
+    return {
+      drugName,
+      catalogEntry,
+      qaExtractionMethod,
+      localSourceFile: localHtmlRecord,
+      sourceQuestionCount: 0,
+      sourceExtraction: {
+        sourceUrl: catalogEntry.url,
+        headingDetected: sourceDocument.headingDetected,
+        qaPairs: []
+      },
+      trumpRx: {
+        found: false,
+        status: "skipped",
+        url: null,
+        medGuideUrl: null,
+        medGuideMatchesCatalogUrl: false,
+        retrievalSteps: [
+          {
+            step: "llama-path",
+            status: "success",
+            detail: "Parsed the source document once and saved the markdown intermediate output."
+          }
+        ],
+        qaPairs: []
+      },
+      status: "llama-path markdown saved",
+      setSimilarityScore: 0,
+      diff: []
+    };
+  }
 
   let sourceDocument;
   let extractedQa;
@@ -164,16 +229,17 @@ async function processDrug({
       attributionType: catalogEntry.attributionType
     });
   }
-  const localHtmlRecord = await findLocalHtmlRecord({
-    drugName,
-    sourceHtmlDir: config.sourceHtmlDir
-  });
-
-
   if (config.saveIntermediate) {
     const filePath = path.join(config.intermediateDir, `${drugName}.source-qa.json`);
     await writeFile(filePath, JSON.stringify(extractedQa, null, 2));
   }
+
+  await writeIntermediateMarkdown({
+    config,
+    drugName,
+    suffix: ".source-document",
+    markdown: sourceDocument?.markdown
+  });
 
   if (config.skipTrumpRx) {
     return {
@@ -246,7 +312,8 @@ async function processDrug({
     medGuideUrl: trumpRxMatch.medGuideUrl,
     browser,
     qaExtractor,
-    questionPatterns: config.questionPatterns
+    questionPatterns: config.questionPatterns,
+    config
   });
 
   const diffResult = await diffEngine.compareQaSets({

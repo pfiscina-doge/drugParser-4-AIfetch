@@ -8,5 +8,11 @@
     "run:sample": "node src/cli.mjs --catalog ./examples/catalog.sample.json --output ./output/sample-diff.json --save-intermediate",
     "ask:perplexity": "node src/perplexity-ask.mjs",
     "update:question-patterns": "node src/update-question-patterns.mjs"
+  },
+  "dependencies": {
+    "@llamaindex/anthropic": "^0.3.27",
+    "@llamaindex/llama-cloud": "^2.3.0",
+    "@llamaindex/openai": "^0.4.23",
+    "llamaindex": "^0.12.1"
   }
 }
