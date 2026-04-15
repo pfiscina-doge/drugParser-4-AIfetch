@@ -7,7 +7,7 @@ import { Anthropic } from "@llamaindex/anthropic";
 
 export function buildExtractionPrompt() {
   return [
-    "Look for a section in this document called Medical Information.",
+    "Look for a section in this document called MEDICATION GUIDE or PATIENT GUIDE.",
     "Find all questions and answers in that section.",
     "Return JSON only with this exact schema:",
     '{"qaPairs":[{"question":"...","answer":"..."}]}',
@@ -125,6 +125,57 @@ function createLlmForAgenticQa(config) {
   return createPerplexityLlm(config);
 }
 
+function parseJsonIfPossible(text) {
+  try {
+    return JSON.parse(String(text || ""));
+  } catch {
+    return null;
+  }
+}
+
+function collectHeadingLines(markdownText) {
+  return String(markdownText || "")
+    .split("\n")
+    .map((line) => String(line || "").trim())
+    .filter((line) => /^#{1,6}\s+/.test(line));
+}
+
+function findFirstMatchingLineNumber(markdownText, pattern) {
+  const lines = String(markdownText || "").split("\n");
+  const loweredPattern = String(pattern || "").trim().toLowerCase();
+  if (!loweredPattern) {
+    return null;
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (String(lines[index] || "").toLowerCase().includes(loweredPattern)) {
+      return index + 1;
+    }
+  }
+
+  return null;
+}
+
+export function buildMarkdownDebugInfo(markdownText) {
+  const normalizedText = String(markdownText || "");
+  const lines = normalizedText.split("\n");
+  const headingLines = collectHeadingLines(normalizedText);
+  const medicalInformationLine = findFirstMatchingLineNumber(normalizedText, "Medical Information");
+  const patientInformationLine = findFirstMatchingLineNumber(normalizedText, "Patient Information");
+  const medicationGuideLine = findFirstMatchingLineNumber(normalizedText, "Medication Guide");
+
+  return {
+    markdownChars: normalizedText.length,
+    markdownLines: lines.length,
+    headingCount: headingLines.length,
+    headingPreview: headingLines.slice(0, 10),
+    containsMedicalInformation: medicalInformationLine !== null,
+    medicalInformationLine,
+    patientInformationLine,
+    medicationGuideLine
+  };
+}
+
 async function createSummaryIndexWithoutEmbeddings(document) {
   const nodes = await Settings.nodeParser.getNodesFromDocuments([document]);
 
@@ -141,6 +192,7 @@ async function createSummaryIndexWithoutEmbeddings(document) {
 export async function runLlamaAgenticQaExtraction({ drugName, markdownText, config }) {
   const query = getConfiguredValue(config.llamaAgenticQaQuery, buildExtractionPrompt());
   const { provider, model, llm } = createLlmForAgenticQa(config);
+  const debugInfo = buildMarkdownDebugInfo(markdownText);
   const document = new Document({
     id_: `${drugName}-llama-path-markdown`,
     text: String(markdownText || "")
@@ -152,15 +204,20 @@ export async function runLlamaAgenticQaExtraction({ drugName, markdownText, conf
     responseSynthesizer
   });
   const response = await queryEngine.query({ query });
+  const rawResponse = response?.toString ? String(response.toString()) : String(response || "");
   const answer = String(
     response?.response
     || (response?.toString ? response.toString() : response || "")
   ).trim();
+  const parsedAnswer = parseJsonIfPossible(answer);
 
   return {
     provider,
     model,
     query,
-    answer
+    debugInfo,
+    rawResponse,
+    answer,
+    parsedAnswer
   };
 }

@@ -2,7 +2,7 @@ if (process.env.LLAMAPARSE_INSECURE_TLS === "1") {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
-import { mkdtemp, mkdir, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, stat } from "node:fs/promises";
 import { createReadStream, createWriteStream } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -25,6 +25,30 @@ function summarizeError(error) {
   }
 
   return String(error);
+}
+
+function buildStageError(stage, detail, extra = {}) {
+  const error = new Error(detail);
+  error.stage = stage;
+  error.extra = extra;
+  return error;
+}
+
+function formatStageDiagnostics({ url, stage, detail, extra = {} }) {
+  const diagnostics = [
+    `url=${url}`,
+    `stage=${stage}`,
+    `detail=${detail}`,
+    `nodeTlsRejectUnauthorized=${process.env.NODE_TLS_REJECT_UNAUTHORIZED || "unset"}`,
+    `drugLabelInsecureTls=${process.env.DRUG_LABEL_INSECURE_TLS || "unset"}`,
+    `llamaParseInsecureTls=${process.env.LLAMAPARSE_INSECURE_TLS || "unset"}`
+  ];
+
+  for (const [key, value] of Object.entries(extra)) {
+    diagnostics.push(`${key}=${value}`);
+  }
+
+  return diagnostics.join(" | ");
 }
 
 function getApiKey(config) {
@@ -68,6 +92,7 @@ function inferDownloadExtension(url) {
 async function downloadUrlToFile(url, filePath) {
   await mkdir(path.dirname(filePath), { recursive: true });
 
+  let fetchError = null;
   try {
     const response = await fetch(url, {
       headers: {
@@ -79,7 +104,16 @@ async function downloadUrlToFile(url, filePath) {
       await streamPipeline(response.body, createWriteStream(filePath));
       return;
     }
-  } catch {
+    throw buildStageError(
+      "source-fetch",
+      `Fetch returned ${response.status} for ${url}.`,
+      {
+        fetchStatus: response.status,
+        fetchContentType: response.headers.get("content-type") || "unknown"
+      }
+    );
+  } catch (error) {
+    fetchError = error;
     // curl handles some TLS and redirect combinations better in this environment.
   }
 
@@ -97,7 +131,13 @@ async function downloadUrlToFile(url, filePath) {
       maxBuffer: 20 * 1024 * 1024
     });
   } catch (curlError) {
-    throw new Error(`Failed to download ${url}. curl: ${summarizeError(curlError)}`);
+    throw buildStageError(
+      "source-download",
+      `Failed to download ${url}. fetch: ${summarizeError(fetchError)}. curl: ${summarizeError(curlError)}`,
+      {
+        curlTlsArgs: getCurlTlsArgs().join(" ") || "none"
+      }
+    );
   }
 }
 
@@ -116,6 +156,7 @@ export async function parseDocumentWithLlamaParse({ url, config }) {
 
   try {
     await downloadUrlToFile(url, sourcePath);
+    const sourceStats = await stat(sourcePath);
 
     const client = new LlamaCloud({
       apiKey,
@@ -145,7 +186,14 @@ export async function parseDocumentWithLlamaParse({ url, config }) {
     const text = resultType === "text" ? (plainText || markdownText) : (markdownText || plainText);
 
     if (!text) {
-      throw new Error(`LlamaParse returned no ${resultType} content for ${url}.`);
+      throw buildStageError(
+        "llama-parse-empty-result",
+        `LlamaParse returned no ${resultType} content for ${url}.`,
+        {
+          downloadedBytes: sourceStats.size,
+          sourcePath
+        }
+      );
     }
 
     return {
@@ -153,7 +201,19 @@ export async function parseDocumentWithLlamaParse({ url, config }) {
       resultType
     };
   } catch (error) {
-    throw new Error(`LlamaParse failed for ${url}: ${summarizeError(error)}`);
+    const stage = error?.stage || "llama-parse";
+    const detail = summarizeError(error);
+    const extra = {
+      ...(error?.extra || {}),
+      resultType,
+      tempSourcePath: sourcePath
+    };
+    throw new Error(formatStageDiagnostics({
+      url,
+      stage,
+      detail,
+      extra
+    }));
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }

@@ -13,7 +13,7 @@
   "llamaAgenticQa": {
     "llmProvider": "perplexity",
     "llmModel": "sonar",
-    "query": "Look for a section in this document called Medical Information.\nFind all questions and answers in that section.\nReturn JSON only with this exact schema:\n{\"qaPairs\":[{\"question\":\"...\",\"answer\":\"...\"}]}\nUse exact text copied from the source section.\nDo not summarize or paraphrase.\nIf the section does not exist, fallback to the closest patient-facing section and still return exact copied text.\nIf nothing is found, return {\"qaPairs\":[]}."
+    "query": "Look for a section in this document called MEDICATION GUIDE or PATIENT GUIDE.\nFind all questions and answers in that section.\nReturn JSON only with this exact schema:\n{\"qaPairs\":[{\"question\":\"...\",\"answer\":\"...\"}]}\nUse exact text copied from the source section.\nDo not summarize or paraphrase.\nIf the section does not exist, fallback to the closest patient-facing section and still return exact copied text.\nIf nothing is found, return {\"qaPairs\":[]}."
   },
   "anthropic": {
     "apiKeyEnvVar": "ANTHROPIC_API_KEY",
