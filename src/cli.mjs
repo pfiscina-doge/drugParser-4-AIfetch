@@ -293,7 +293,7 @@ async function main() {
     anthropicApiKeyEnvVar: anthropicConfig.apiKeyEnvVar || "ANTHROPIC_API_KEY",
     anthropicModel: anthropicConfig.model || "claude-3-5-sonnet-latest",
     saveIntermediate: args.saveIntermediate,
-    agenticDebug: args.agenticDebug,
+    agenticDebug: args.agenticDebug || args.llamaPathSaveMarkdown,
     onlyFromCatalogURL: args.onlyFromCatalogURL,
     skipTrumpRx: args.skipTrumpRx,
     intermediateDir,

@@ -7,14 +7,11 @@ import { Anthropic } from "@llamaindex/anthropic";
 
 export function buildExtractionPrompt() {
   return [
-    "Look for a section in this document called MEDICATION GUIDE or PATIENT GUIDE.",
-    "Find all questions and answers in that section.",
+    "Find all questions and answers in this markdown.",
     "Return JSON only with this exact schema:",
     '{"qaPairs":[{"question":"...","answer":"..."}]}',
     "Use exact text copied from the source section.",
-    "Do not summarize or paraphrase.",
-    "If the section does not exist, fallback to the closest patient-facing section and still return exact copied text.",
-    "If nothing is found, return {\"qaPairs\":[]}."
+    "Do not summarize or paraphrase."
   ].join("\n");
 }
 
@@ -156,6 +153,85 @@ function findFirstMatchingLineNumber(markdownText, pattern) {
   return null;
 }
 
+function findLineIndex(lines, matcher, startIndex = 0) {
+  for (let index = Math.max(0, startIndex); index < lines.length; index += 1) {
+    if (matcher(String(lines[index] || ""), index)) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function isHeadingLine(line, headingText) {
+  const normalizedLine = String(line || "").trim().toLowerCase();
+  const normalizedHeading = String(headingText || "").trim().toLowerCase();
+  return normalizedLine === `# ${normalizedHeading}`;
+}
+
+export function preprocessMarkdownForQa(markdownText) {
+  const normalizedText = String(markdownText || "");
+  const lines = normalizedText.split("\n");
+
+  const medicationGuideStart = findLineIndex(lines, (line) => isHeadingLine(line, "MEDICATION GUIDE"));
+  if (medicationGuideStart >= 0) {
+    const medicationGuideEnd = findLineIndex(
+      lines,
+      (line) => String(line || "").includes("This Medication Guide has been approved by the U.S. Food and Drug Administration"),
+      medicationGuideStart
+    );
+    const endIndex = medicationGuideEnd >= 0 ? medicationGuideEnd + 1 : lines.length;
+
+    return {
+      strategy: "medication-guide",
+      startLine: medicationGuideStart + 1,
+      endLine: endIndex,
+      text: lines.slice(medicationGuideStart, endIndex).join("\n").trim()
+    };
+  }
+
+  const patientInformationStart = findLineIndex(lines, (line) => isHeadingLine(line, "Patient Information"));
+  if (patientInformationStart >= 0) {
+    const patientInformationEnd = findLineIndex(
+      lines,
+      (line) => String(line || "").toLowerCase().includes("approved by the u.s. food and drug administration"),
+      patientInformationStart
+    );
+    const endIndex = patientInformationEnd >= 0 ? patientInformationEnd + 1 : lines.length;
+
+    return {
+      strategy: "patient-information",
+      startLine: patientInformationStart + 1,
+      endLine: endIndex,
+      text: lines.slice(patientInformationStart, endIndex).join("\n").trim()
+    };
+  }
+
+  const fullPrescribingInformationStart = findLineIndex(lines, (line) => isHeadingLine(line, "FULL PRESCRIBING INFORMATION"));
+  if (fullPrescribingInformationStart >= 0) {
+    const fullPrescribingInformationEnd = findLineIndex(
+      lines,
+      (line, index) => index > fullPrescribingInformationStart && String(line || "").trim() === "# FULL PRESCRIBING INFORMATION:",
+      fullPrescribingInformationStart
+    );
+    const endIndex = fullPrescribingInformationEnd >= 0 ? fullPrescribingInformationEnd : lines.length;
+
+    return {
+      strategy: "full-prescribing-information",
+      startLine: fullPrescribingInformationStart + 1,
+      endLine: endIndex,
+      text: lines.slice(fullPrescribingInformationStart, endIndex).join("\n").trim()
+    };
+  }
+
+  return {
+    strategy: "full-document",
+    startLine: 1,
+    endLine: lines.length,
+    text: normalizedText.trim()
+  };
+}
+
 export function buildMarkdownDebugInfo(markdownText) {
   const normalizedText = String(markdownText || "");
   const lines = normalizedText.split("\n");
@@ -163,6 +239,7 @@ export function buildMarkdownDebugInfo(markdownText) {
   const medicalInformationLine = findFirstMatchingLineNumber(normalizedText, "Medical Information");
   const patientInformationLine = findFirstMatchingLineNumber(normalizedText, "Patient Information");
   const medicationGuideLine = findFirstMatchingLineNumber(normalizedText, "Medication Guide");
+  const preprocessed = preprocessMarkdownForQa(normalizedText);
 
   return {
     markdownChars: normalizedText.length,
@@ -172,7 +249,11 @@ export function buildMarkdownDebugInfo(markdownText) {
     containsMedicalInformation: medicalInformationLine !== null,
     medicalInformationLine,
     patientInformationLine,
-    medicationGuideLine
+    medicationGuideLine,
+    qaPreprocessStrategy: preprocessed.strategy,
+    qaPreprocessStartLine: preprocessed.startLine,
+    qaPreprocessEndLine: preprocessed.endLine,
+    qaPreprocessChars: preprocessed.text.length
   };
 }
 
@@ -193,9 +274,10 @@ export async function runLlamaAgenticQaExtraction({ drugName, markdownText, conf
   const query = getConfiguredValue(config.llamaAgenticQaQuery, buildExtractionPrompt());
   const { provider, model, llm } = createLlmForAgenticQa(config);
   const debugInfo = buildMarkdownDebugInfo(markdownText);
+  const preprocessed = preprocessMarkdownForQa(markdownText);
   const document = new Document({
     id_: `${drugName}-llama-path-markdown`,
-    text: String(markdownText || "")
+    text: preprocessed.text
   });
   const index = await createSummaryIndexWithoutEmbeddings(document);
   const responseSynthesizer = getResponseSynthesizer("compact", { llm });
@@ -203,12 +285,14 @@ export async function runLlamaAgenticQaExtraction({ drugName, markdownText, conf
     retriever: index.asRetriever({ mode: "default" }),
     responseSynthesizer
   });
-  const response = await queryEngine.query({ query });
-  const rawResponse = response?.toString ? String(response.toString()) : String(response || "");
-  const answer = String(
-    response?.response
-    || (response?.toString ? response.toString() : response || "")
-  ).trim();
+  const responseStream = await queryEngine.query({ query, stream: true });
+  let rawResponse = "";
+
+  for await (const chunk of responseStream) {
+    rawResponse += String(chunk?.response || "");
+  }
+
+  const answer = rawResponse.trim();
   const parsedAnswer = parseJsonIfPossible(answer);
 
   return {

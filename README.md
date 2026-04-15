@@ -173,7 +173,7 @@ Files in `examples/chantix`:
 - `--output <path>`
 - `--intermediate-dir <path>`
 - `--save-intermediate`
-- `--agentic-debug`: when using `agentic`, writes the exact prompt and raw response under the intermediate directory
+- `--agentic-debug`: writes debug artifacts under the intermediate directory, including llama-path source markdown, processed markdown, and raw QA responses
 - `--only-from-catalog-url`: when using `agentic`, tells the LLM to use only the parsed content from the source URL and not follow links
 - `--new-doc-parse-method <fetch|agent-browser|llama-path>`: optional override for document loading
 - `--diff-engine <heuristic|perplexity>`
@@ -184,7 +184,7 @@ Files in `examples/chantix`:
 - `--llama-path-base-url <url>`
 - `--llama-path-api-key <key>`
 - `--llama-path-result-type <markdown|text>`
-- `--llama-path-save-markdown`: optional CLI-only flag that writes the parsed markdown work file to `--intermediate-dir`
+- `--llama-path-save-markdown`: legacy alias for debug markdown output; prefer `--agentic-debug`
 - `--llama-agentic-qa-provider <perplexity|claude|openai>`
 - `--llama-agentic-qa-model <model>`
 - `--llama-agentic-qa-query <text>`

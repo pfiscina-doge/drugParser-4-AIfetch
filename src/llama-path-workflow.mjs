@@ -1,14 +1,18 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseDocumentWithLlamaParse } from "./services/llama-parse-client.mjs";
-import { buildMarkdownDebugInfo, runLlamaAgenticQaExtraction } from "./services/llama-agentic-qa-extraction.mjs";
+import {
+  buildMarkdownDebugInfo,
+  preprocessMarkdownForQa,
+  runLlamaAgenticQaExtraction
+} from "./services/llama-agentic-qa-extraction.mjs";
 
 const QA_WAIT_NOTICE_DELAY_MS = 60_000;
 const QA_WAIT_NOTICE_INTERVAL_MS = 30_000;
 const CATALOG_PROGRESS_INTERVAL_MS = 5 * 60_000;
 
 async function writeOptionalMarkdown({ config, drugName, markdownText }) {
-  if (!config.llamaPathSaveMarkdown) {
+  if (!config.agenticDebug) {
     return null;
   }
 
@@ -16,6 +20,25 @@ async function writeOptionalMarkdown({ config, drugName, markdownText }) {
   const markdownPath = path.join(config.intermediateDir, `${drugName}.source-document.md`);
   await writeFile(markdownPath, markdownText, "utf8");
   return markdownPath;
+}
+
+async function writeOptionalProcessedMarkdown({ config, drugName, markdownText }) {
+  if (!config.agenticDebug) {
+    return null;
+  }
+
+  const processed = preprocessMarkdownForQa(markdownText);
+  const processedDir = path.join(config.intermediateDir, "processed-markdown");
+  await mkdir(processedDir, { recursive: true });
+  const processedMarkdownPath = path.join(processedDir, `${drugName}.processed.md`);
+  await writeFile(processedMarkdownPath, processed.text, "utf8");
+
+  return {
+    processedMarkdownPath,
+    processedMarkdownStrategy: processed.strategy,
+    processedMarkdownStartLine: processed.startLine,
+    processedMarkdownEndLine: processed.endLine
+  };
 }
 
 function getQaJsonPath(config, drugName) {
@@ -26,11 +49,22 @@ function getQaStatusPath(config, drugName) {
   return path.join(config.intermediateDir, `${drugName}.llama-agentic-qa-status.txt`);
 }
 
+function getQaRawResponsePath(config, drugName) {
+  return path.join(config.intermediateDir, `${drugName}.source-qa.raw.json`);
+}
+
 async function writeQaResultFile({ config, drugName, qaResult }) {
   await mkdir(config.intermediateDir, { recursive: true });
   const filePath = getQaJsonPath(config, drugName);
   const payload = qaResult?.parsedAnswer ?? { rawAnswer: qaResult?.answer || "" };
   await writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  return filePath;
+}
+
+async function writeQaRawResponseFile({ config, drugName, qaResult }) {
+  await mkdir(config.intermediateDir, { recursive: true });
+  const filePath = getQaRawResponsePath(config, drugName);
+  await writeFile(filePath, `${String(qaResult?.rawResponse || "")}\n`, "utf8");
   return filePath;
 }
 
@@ -51,6 +85,10 @@ function formatDebugSummary(drugName, debugInfo, query) {
     `medicalInformationLine=${debugInfo.medicalInformationLine ?? "none"}`,
     `patientInformationLine=${debugInfo.patientInformationLine ?? "none"}`,
     `medicationGuideLine=${debugInfo.medicationGuideLine ?? "none"}`,
+    `qaPreprocessStrategy=${debugInfo.qaPreprocessStrategy ?? "none"}`,
+    `qaPreprocessStartLine=${debugInfo.qaPreprocessStartLine ?? "none"}`,
+    `qaPreprocessEndLine=${debugInfo.qaPreprocessEndLine ?? "none"}`,
+    `qaPreprocessChars=${debugInfo.qaPreprocessChars ?? 0}`,
     `headingPreview=${headingPreview}`
   ].join("\n");
 }
@@ -98,6 +136,11 @@ async function runQaExtractionWithProgress({ config, drugName, markdownText }) {
       drugName,
       qaResult
     });
+    const qaRawResponsePath = await writeQaRawResponseFile({
+      config,
+      drugName,
+      qaResult
+    });
     const completionMessage = waitStarted
       ? `[llama-path] ${drugName}: llama-agentic-qa-extraction completed after ${Math.round((Date.now() - startedAt) / 1000)}s.`
       : `[llama-path] ${drugName}: llama-agentic-qa-extraction completed.`;
@@ -105,7 +148,8 @@ async function runQaExtractionWithProgress({ config, drugName, markdownText }) {
 
     return {
       qaResult,
-      qaJsonPath
+      qaJsonPath,
+      qaRawResponsePath
     };
   } finally {
     clearTimeout(timeoutId);
@@ -121,7 +165,7 @@ export async function runLlamaPathWorkflow({ catalog, config }) {
   const totalDrugs = drugEntries.length;
   let completedDrugs = 0;
 
-  if (config.llamaPathSaveMarkdown || config.intermediateDir) {
+  if (config.agenticDebug || config.intermediateDir) {
     await mkdir(config.intermediateDir, { recursive: true });
   }
 
@@ -144,9 +188,15 @@ export async function runLlamaPathWorkflow({ catalog, config }) {
           drugName,
           markdownText
         });
+        const processedMarkdown = await writeOptionalProcessedMarkdown({
+          config,
+          drugName,
+          markdownText
+        });
         const {
           qaResult,
-          qaJsonPath
+          qaJsonPath,
+          qaRawResponsePath
         } = await runQaExtractionWithProgress({
           config,
           drugName,
@@ -167,7 +217,12 @@ export async function runLlamaPathWorkflow({ catalog, config }) {
             markdownSaved: Boolean(markdownPath),
             markdownPath,
             markdownChars: markdownText.length,
+            processedMarkdownPath: processedMarkdown?.processedMarkdownPath || null,
+            processedMarkdownStrategy: processedMarkdown?.processedMarkdownStrategy || null,
+            processedMarkdownStartLine: processedMarkdown?.processedMarkdownStartLine || null,
+            processedMarkdownEndLine: processedMarkdown?.processedMarkdownEndLine || null,
             qaJsonPath,
+            qaRawResponsePath,
             agenticQa: qaResult
           },
           trumpRx: {
