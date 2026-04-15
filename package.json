@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/cli.mjs",
+    "test": "node --test",
+    "test:llama-fixtures": "node --test test/llama-path-fixture.test.mjs",
     "run:sample": "node src/cli.mjs --catalog ./examples/catalog.sample.json --output ./output/sample-diff.json --save-intermediate",
     "ask:perplexity": "node src/perplexity-ask.mjs",
     "update:question-patterns": "node src/update-question-patterns.mjs"
